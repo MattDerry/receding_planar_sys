@@ -1,4 +1,4 @@
-<launch> 
+<launch>
   <!-- ARGUMENT DEFINITIONS -->
   <arg name="vis" default="true" /> <!-- run rviz? -->
   <arg name="index" value="1" /> <!-- robot XBee value -->
@@ -17,9 +17,9 @@
   <arg name="ry" default="0.125" /> <!-- half-height of superellipse -->
   <arg name="power" default="2.5" /> <!-- power of superellipse -->
   <!-- inverse of exponential ramp time constant (0.0 means no ramp, higher numbers mean slower ramp -->
-  <arg name="exponent" default="0.0" /> 
+  <arg name="exponent" default="0.0" />
   <arg name="r0" default="1.0" /> <!-- initial length of string in meters -->
-  
+
   <!-- first let's add the static frame broadcaster that broadcasts frames in a default config -->
   <include file="$(find robot_simulator)/launch/default_calibration_frames.launch" />
 
@@ -39,13 +39,10 @@
     <include file="$(find robot_simulator)/launch/single_robot_simulator.launch" >
       <arg name="rn" value="$(arg rn)" />
     </include>
-    
+
     <!-- start up trep simulation and visualizer for mass position -->
-    <node pkg="robot_simulator" name="mass_simulator"
-	  type="suspended_mass_trep.py"
-          output="screen" respawn="true" />
-    <node pkg="robot_simulator" name="marker" type="mass_marker" 
-          output="screen" respawn="true" />
+    <node pkg="robot_simulator" name="mass_simulator" type="suspended_mass_trep.py" output="screen" respawn="true" />
+    <node pkg="robot_simulator" name="marker" type="mass_marker" output="screen" respawn="true" />
 
     <!-- now I want to set appropriate parameters and start up the controller -->
     <node pkg="receding_planar_sys" name="receding_controller"
@@ -58,42 +55,35 @@
       <param name="r0" value="$(arg r0)" type="double"/>
       <param name="interactive" value="$(arg interactive)" type="bool" />
       <!-- load relevant matrices -->
-      <rosparam command="load" 
-		file="$(find receding_planar_sys)/launch/noise_and_control_params.yaml" />
+      <rosparam command="load" file="$(find receding_planar_sys)/launch/noise_and_control_params.yaml" />
     </node>
 
     <!-- interactive marker nodes -->
     <group if="$(arg interactive)">
-      <node pkg="receding_planar_sys" name="interactive_marker"
-	    type="interactive_marker_ref_gen" output="screen" respawn="true" />
-      <node pkg="receding_planar_sys" name="marker_paths"
-	    type="marker_path.py" output="screen" respawn="true" />
+      <group if="$(arg joy)">
+        <node pkg="receding_planar_sys" name="joystick_marker_ref_gen" type="joystick_marker_ref_gen.py" output="screen" respawn="true" />
+      </group>
+      <group unless="$(arg joy)">
+        <node pkg="receding_planar_sys" name="interactive_marker" type="interactive_marker_ref_gen" output="screen" respawn="true" />
+      </group>
+      <node pkg="receding_planar_sys" name="marker_paths" type="marker_path.py" output="screen" respawn="true" />
     </group>
 
     <!-- load parameters for the limits of the world -->
-    <rosparam command="load" 
-	      file="$(find receding_planar_sys)/launch/world_limits.yaml" />
+    <rosparam command="load" file="$(find receding_planar_sys)/launch/world_limits.yaml" />
+  </group>
+
+  <group if="$(arg joy)">
+    <node pkg="joy" type="joy_node" name="joystick_node" output="screen" respawn="true"/>
   </group>
 
   <!-- start up the keyboard node -->
   <param name="robot_index" value="$(arg index)" />
-  <node pkg="keyboard_node" type="multi_keyboard_node"
-	name="keyboard_interface" output="screen" respawn="true"
-	launch-prefix="xterm -e" />
-
-  <!-- start up emergency stop stuff -->
-  <group if="$(arg joy)">
-    <!-- <param name="joy_node/dev" value="/dev/input/js0" /> -->
-    <node pkg="joy" type="joy_node" name="joystick_node" output="screen" respawn="true"/>
-    <node pkg="receding_planar_sys" name="emergency_stopper_joy" type="emergency_stopper_joy.py" 
-	  output="screen" respawn="true" />
-  </group>
+  <node pkg="keyboard_node" type="multi_keyboard_node" name="keyboard_interface" output="screen" respawn="true"	launch-prefix="xterm -e" />
 
   <!-- start up rviz unless visualization is set to false -->
   <group if="$(arg vis)">
-    <node pkg="rviz" type="rviz" respawn="false" name="rviz"
-	  args="-d $(find receding_planar_sys)/launch/interactive_robot.rviz" />
+    <node pkg="rviz" type="rviz" respawn="false" name="rviz" args="-d $(find receding_planar_sys)/launch/interactive_robot.rviz" />
   </group>
-  
 
 </launch>

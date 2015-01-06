@@ -201,6 +201,7 @@ class MarkerControls:
             pt.point.x = pos.x
             pt.point.y = pos.y
             pt.point.z = pos.z
+            rospy.loginfo("X: %f, Y: %f, Z: %f", pt.point.x, pt.point.y, pt.point.z)
             self.marker_pub.publish(pt)
             m = con.int_marker.controls[0].markers[0]
             m.header = con.int_marker.header
