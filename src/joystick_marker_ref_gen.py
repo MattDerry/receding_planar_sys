@@ -140,7 +140,7 @@ class SingleController:
     def update_pose(self):
         current_time = rospy.Time.now()
         dt = current_time - self.int_marker.header.stamp
-        rospy.loginfo("Old X: %f, Old Y: %f", self.int_marker.pose.position.x, self.int_marker.pose.position.y)
+        # rospy.loginfo("Old X: %f, Old Y: %f", self.int_marker.pose.position.x, self.int_marker.pose.position.y)
         self.int_marker.pose.position.x = self.int_marker.pose.position.x + self.command.linear.x * dt.to_sec()
         self.int_marker.pose.position.y = self.int_marker.pose.position.y + self.command.linear.y * dt.to_sec()
         # rospy.loginfo("New X: %f, New Y: %f", self.int_marker.pose.position.x, self.int_marker.pose.position.y)
@@ -211,7 +211,7 @@ class MarkerControls:
 
     def joy_cb(self, msg):
         if self.operating_condition == OperatingCondition.RUN:
-            rospy.loginfo("joy_cb called...")
+            # rospy.loginfo("joy_cb called...")
             for con in self.controllers:
                 con.command.linear.x = msg.axes[0] * X_GAIN
                 con.command.linear.y = msg.axes[1] * Y_GAIN
@@ -237,7 +237,7 @@ class MarkerControls:
             pt.point.y = pos.y
             pt.point.z = pos.z
             self.marker_pub.publish(pt)
-            self.current_pose_pub(con.int_marker)
+            self.current_pose_pub.publish(con.int_marker)
             m = con.int_marker
             m.header = con.int_marker.header
             m.pose = con.int_marker.pose

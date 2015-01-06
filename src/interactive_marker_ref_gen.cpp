@@ -229,7 +229,7 @@ void send_transforms(void)
 	pt.point.x = vm.pose.position.x;
 	pt.point.y = vm.pose.position.y;
 	pt.point.z = vm.pose.position.z;
-  ROS_INFO("X: %f, Y: %f, Z: %f", pt.point.x, pt.point.y, pt.point.z);
+  // ROS_INFO("X: %f, Y: %f, Z: %f", pt.point.x, pt.point.y, pt.point.z);
 	marker_pub_ref->publish(pt);
 	// build entry for MarkerArray
 	Marker m;
