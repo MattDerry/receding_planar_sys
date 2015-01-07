@@ -58,6 +58,8 @@ from puppeteer_msgs.srv import OperatingConditionChange
 from puppeteer_msgs.srv import OperatingConditionChangeRequest
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Twist
+from sensor_msgs.msg import Joy
 
 # misc imports:
 import numpy as np
@@ -95,7 +97,7 @@ class RecedingController:
         self.twin = np.arange(0, self.dt*self.n_win, self.dt)
         self.dsys = op.discopt.DSystem(self.mvi, self.twin)
         self.dsyssim = op.discopt.DSystem(self.mvi, [0, self.dt])
-        
+
         # create optimizer and cost matrices
         self.optimizer = op.RecedingOptimizer(self.system, self.twin, DT=self.dt)
         if rospy.has_param("~q_weight"):
@@ -192,6 +194,11 @@ class RecedingController:
             self.setup_full_controller()
             self.meas_sub = rospy.Subscriber("meas_config", PlanarSystemConfig,
                                              self.feedforwardcb)
+        elif self.ctype == "direct" and self.interactive_bool:
+            rospy.loginfo("Running direct control of robot and winch")
+            self.setup_direct_controller()
+            self.meas_sub = rospy.Subscriber("meas_config", PlanarSystemConfig, self.direct_cb)
+            self.joy_sub = rospy.Subscriber("/joy", Joy, self.joy_cb)
         else:
             rospy.logwarn("Unrecognized or impossible controller situation")
             rospy.logwarn("Falling back to receding controller")
@@ -219,9 +226,7 @@ class RecedingController:
         self.send_initial_config()
         # send robot a start command:
         self.send_start_command()
-
         return
-        
 
 
     def ref_config_service_handler(self, req):
@@ -257,6 +262,11 @@ class RecedingController:
                 'time' : time,
                 }
 
+    def setup_direct_controller(self):
+        self.current_command = Twist()
+        self.X_GAIN = 1.0
+        self.Y_GAIN = 1.0
+        return
 
     def setup_lqr_controller(self, X0=None):
         steps = 100
@@ -299,10 +309,42 @@ class RecedingController:
         return
 
 
+    def joy_cb(self, data):
+        self.current_command.linear.x = data.axes[0] * self.X_GAIN
+        self.current_command.linear.y = data.axes[1] * self.Y_GAIN
+        return
+
+
     def opcb(self, data):
         # rospy.loginfo("Operating condition cb: %d"%data.state)
         self.operating_condition = data.state
         return
+
+    def direct_cb(self, data):
+        current_time = rospy.Time.now()
+        ucom = np.array([self.current_command.linear.x, self.current_command.linear.y])
+        dt = current_time - data.header.stamp
+        new_x = data.xr + self.current_command.linear.x * dt.to_sec()
+        new_winch = data.r + self.current_command.linear.y * dt.to_sec()
+        if self.xlim is not None:
+            clipped_x = np.clip(new_x, *self.xlim)
+            if abs(new_x-clipped_x) == 0:
+                ucom[0] = 0.0
+        if self.ylim is not None:
+            clipped_winch = np.clip(new_winch, *self.ylim)
+            if abs(new_winch-clipped_winch) == 0:
+                ucom[1] = 0.0
+
+        com = RobotCommands()
+        com.robot_index = self.robot_index
+        com.type = ord('i')
+        com.v_robot = ucom[0]
+        com.w_robot = 0
+        com.rdot = 0
+        com.rdot_left = ucom[1]
+        com.rdot_right = 0
+        com.div = 3
+        self.comm_pub.publish(com)
 
 
     def recedingcb(self, data):
@@ -325,7 +367,7 @@ class RecedingController:
             # clear trajectories:
             self.mass_ref_vec.clear()
             self.mass_filt_vec.clear()
-            # reset 
+            # reset
             if self.interactive_bool:
                 self.RM.reset_interps()
             return
@@ -438,7 +480,7 @@ class RecedingController:
             # clear trajectories:
             self.mass_ref_vec.clear()
             self.mass_filt_vec.clear()
-            # reset 
+            # reset
             if self.interactive_bool:
                 self.RM.reset_interps()
             return
@@ -674,7 +716,7 @@ class RecedingController:
             # clear trajectories:
             self.mass_ref_vec.clear()
             self.mass_filt_vec.clear()
-            # reset 
+            # reset
             if self.interactive_bool:
                 self.RM.reset_interps()
             return
@@ -757,7 +799,7 @@ class RecedingController:
                 self.stop_robots()
         return
 
-        
+
     def get_and_set_params(self):
         # robot index:
         if rospy.has_param("robot_index"):
@@ -867,7 +909,7 @@ class RecedingController:
         tools.array_to_state(self.system, Xfilt, xmsg)
         tools.array_to_config(self.system, Xfilt[0:self.system.nQ], qmsg)
         self.filt_state_pub.publish(xmsg)
-        self.filt_pub.publish(qmsg) 
+        self.filt_pub.publish(qmsg)
         # publish ref data:
         xmsg = PlanarSystemState()
         qmsg = PlanarSystemConfig()
@@ -879,7 +921,7 @@ class RecedingController:
         self.ref_pub.publish(qmsg)
         return
 
-        
+
     def path_timercb(self, time_dat):
         if len(self.mass_ref_vec) > 0:
             # send reference path
@@ -897,7 +939,7 @@ class RecedingController:
             filt_path.poses = list(self.mass_filt_vec)
             self.filt_path_pub.publish(filt_path)
         return
-    
+
 
     def send_initial_config(self):
         com = RobotCommands()
@@ -929,7 +971,7 @@ class RecedingController:
         if self.ylim is not None:
             u[1] = np.clip(u[1], *self.ylim)
         return u
-            
+
     def convert_and_send_input(self, u1, u2):
         """
         This function takes in two sets of kinematic inputs, processes them, and
@@ -953,7 +995,7 @@ class RecedingController:
         self.comm_pub.publish(com)
         return
 
-    
+
     def stop_robots(self):
         com = RobotCommands()
         com.robot_index = self.robot_index

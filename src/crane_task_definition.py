@@ -40,9 +40,31 @@ MARKERWF = 'optimization_frame'
 MARKERFRAME = 'mass_ref_frame'
 XLIM = None
 YLIM = None
+limit_marker = None
 obstacle_markers = []
 
-
+def makeLimitMarker():
+    print XLIM
+    print YLIM
+    marker = Marker()
+    marker.type = Marker.LINE_STRIP
+    marker.scale.x = 0.05
+    marker.color.a = 1.0
+    marker.points = []
+    marker.lifetime = rospy.Duration()
+    marker.header.frame_id = MARKERWF
+    # Lower left
+    marker.points.append(Point(XLIM[0], YLIM[0], 0.0))
+    # Upper left
+    marker.points.append(Point(XLIM[0], YLIM[1], 0.0))
+    # Upper right
+    marker.points.append(Point(XLIM[1], YLIM[1], 0.0))
+    # Lower right
+    marker.points.append(Point(XLIM[1], YLIM[0], 0.0))
+    # repeat lower left
+    marker.points.append(Point(XLIM[0], YLIM[0], 0.0))
+    rospy.loginfo("[JOY] Made Limit Marker")
+    return marker
 
 def makeObstacleMarker(obst, oid):
     marker = Marker()
@@ -182,7 +204,8 @@ class CraneTaskCoordinator:
         self.filt_state_sub = rospy.Subscriber("filt_state", PlanarSystemState, self.state_cb)
         # create publisher for obstacle markers if any exist
         self.obstacle_pub = rospy.Publisher("obstacle_markers", Marker, queue_size=5)
-
+        # publish limit marker if one exists
+        self.limit_pub = rospy.Publisher("limit_markers", Marker, queue_size=1)
         return
 
     def state_cb(self, msg):
@@ -191,6 +214,8 @@ class CraneTaskCoordinator:
 
     def op_cb(self, msg):
         if msg.state == OperatingCondition.RUN and self.operating_condition != OperatingCondition.RUN:
+            if limit_marker is not None:
+                self.limit_pub.publish(limit_marker)
             for obm in obstacle_markers:
                 obm.header.stamp = rospy.Time.now()
                 self.obstacle_pub.publish(obm)
@@ -207,6 +232,8 @@ def main():
         tmp = rospy.get_param("ylim")
         global YLIM
         YLIM = np.sort(np.array(tmp))
+        global limit_marker
+        limit_marker = makeLimitMarker()
         if rospy.has_param("obstacles"):
             rospy.loginfo("[CRANE]Has obstacles")
             obstacles = rospy.get_param("obstacles")

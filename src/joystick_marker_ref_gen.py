@@ -200,9 +200,9 @@ class MarkerControls:
         self.operating_condition = data.state
         if self.operating_condition == OperatingCondition.RUN:
             self.controllers.append(SingleController(MARKERFRAME, MARKERWF, color='green'))
-            if limit_marker is not None:
-                rospy.loginfo("[JOY] Publish limits...")
-                self.limit_pub.publish(limit_marker)
+            # if limit_marker is not None:
+                # rospy.loginfo("[JOY] Publish limits...")
+                # self.limit_pub.publish(limit_marker)
         elif self.operating_condition == OperatingCondition.IDLE:
             rospy.loginfo("Removing marker from server")
             self.controllers = []
