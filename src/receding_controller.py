@@ -265,7 +265,7 @@ class RecedingController:
     def setup_direct_controller(self):
         self.current_command = Twist()
         self.X_GAIN = 1.0
-        self.Y_GAIN = 1.0
+        self.Y_GAIN = -1.0
         return
 
     def setup_lqr_controller(self, X0=None):
@@ -328,11 +328,11 @@ class RecedingController:
         new_winch = data.r + self.current_command.linear.y * dt.to_sec()
         if self.xlim is not None:
             clipped_x = np.clip(new_x, *self.xlim)
-            if abs(new_x-clipped_x) == 0:
+            if abs(new_x-clipped_x) != 0:
                 ucom[0] = 0.0
         if self.ylim is not None:
             clipped_winch = np.clip(new_winch, *self.ylim)
-            if abs(new_winch-clipped_winch) == 0:
+            if abs(new_winch-clipped_winch) != 0:
                 ucom[1] = 0.0
 
         com = RobotCommands()

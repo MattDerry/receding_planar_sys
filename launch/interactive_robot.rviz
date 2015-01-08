@@ -8,7 +8,7 @@ Panels:
         - /Status1
         - /TF1/Frames1
       Splitter Ratio: 0.681529
-    Tree Height: 633
+    Tree Height: 359
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -155,7 +155,7 @@ Visualization Manager:
       Marker Topic: /robot_1/mass_marker
       Name: Marker
       Namespaces:
-        {}
+        markers: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -163,7 +163,7 @@ Visualization Manager:
       Marker Topic: /robot_1/limit_markers
       Name: Marker
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -209,7 +209,7 @@ Visualization Manager:
       Marker Topic: /robot_1/obstacle_markers
       Name: Marker
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -256,10 +256,10 @@ Visualization Manager:
         Z: -0.923213
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.125399
+      Pitch: 0.025399
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.14
+      Yaw: 1.57
     Saved: ~
 Window Geometry:
   Displays:
@@ -277,5 +277,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1200
-  X: 710
-  Y: 128
+  X: 700
+  Y: 118
