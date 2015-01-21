@@ -1,4 +1,4 @@
-obstacles: [[0.2, 0.3, 0.75], [0.7, 0.2, 0.0], [0.3, 0.4, -0.5]]  # list of obstacles [height, width, xpos]
+obstacles: [[0.2, 0.3, 0.75], [0.3, 0.2, 0.0], [0.3, 0.4, -0.5]]  # list of obstacles [height, width, xpos]
 targets: [[0.75, 0.3, 0.1], [-0.5, 0.4, 0.1]]   # list of targets [x, y, radius]
 left_targets: [[0.2, 0.1, 0.1], [0.35, 0.1, 0.1], [0.5, 0.1, 0.1], [0.70, 0.3, 0.1], [0.75, 0.3, 0.1], [0.80, 0.3, 0.1]]   # list of targets [x, y, radius]
 right_targets: [[-0.2, 0.1, 0.1], [-0.35, 0.4, 0.1], [-0.5, 0.4, 0.1], [-0.65, 0.4, 0.1], [-0.8, 0.1, 0.1], [-0.9, 0.1, 0.1]]   # list of targets [x, y, radius]
