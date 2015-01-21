@@ -46,7 +46,7 @@
 
     <!-- now I want to set appropriate parameters and start up the controller -->
     <node pkg="receding_planar_sys" name="receding_controller"
-	  type="receding_controller.py" output="screen" respawn="true" >
+		  type="receding_controller.py" output="screen" respawn="true" >
       <param name="tper" value="$(arg tper)" type="double"/>
       <param name="rx" value="$(arg rx)" type="double"/>
       <param name="ry" value="$(arg ry)" type="double"/>
@@ -60,12 +60,13 @@
 
     <!-- interactive marker nodes -->
     <group if="$(arg interactive)">
-      <group if="$(arg joy)">
-        <node pkg="receding_planar_sys" name="joystick_marker_ref_gen" type="joystick_marker_ref_gen.py" output="screen" respawn="true" />
-      </group>
+      <node pkg="receding_planar_sys" name="joystick_marker_ref_gen" type="joystick_marker_ref_gen.py" output="screen" respawn="true" />
+	  <node pkg="joy" type="joy_node" name="joystick_node" output="screen" respawn="true">
+		<param name="dev" value="/dev/input/js2"/>
+	  </node>
       <!-- <group unless="$(arg joy)">
-        <node pkg="receding_planar_sys" name="interactive_marker" type="interactive_marker_ref_gen" output="screen" respawn="true" />
-      </group> -->
+           <node pkg="receding_planar_sys" name="interactive_marker" type="interactive_marker_ref_gen" output="screen" respawn="true" />
+		   </group> -->
       <node pkg="receding_planar_sys" name="marker_paths" type="marker_path.py" output="screen" respawn="true" />
     </group>
 
@@ -80,8 +81,16 @@
     <node pkg="receding_planar_sys" name="crane_task_coordinator" type="crane_task_definition.py" output="screen" respawn="true" />
   </group>
 
+  <!-- start up emergency stop stuff -->
   <group if="$(arg joy)">
-    <node pkg="joy" type="joy_node" name="joystick_node" output="screen" respawn="true"/>
+	<node pkg="joy" type="joy_node" name="joystick_estop" output="screen" respawn="true">
+	  <param name="dev" value="/dev/input/js1"/>
+	  <remap from="joy" to="joy_emergency" />
+	</node>
+    <node pkg="receding_planar_sys" name="emergency_stopper_joy" type="emergency_stopper_joy.py" 
+		  output="screen" respawn="true">
+	  <remap from="joy" to="joy_emergency" />
+	</node>
   </group>
 
   <!-- start up the keyboard node -->

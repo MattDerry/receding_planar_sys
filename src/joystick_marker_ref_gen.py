@@ -332,7 +332,7 @@ class MarkerControls:
         # publish limit marker if one exists
         self.limit_pub = rospy.Publisher("limit_markers", Marker, queue_size=1)
         # create subscriber for joy stick message
-        self.joy_sub = rospy.Subscriber("/joy", Joy, self.joy_cb)
+        self.joy_sub = rospy.Subscriber("joy", Joy, self.joy_cb)
         # create current position marker publisher
         self.current_pose_pub = rospy.Publisher("current_pose", Marker, queue_size=1)
         self.trust_pub = rospy.Publisher("current_trust", Marker, queue_size=2)

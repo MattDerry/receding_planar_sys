@@ -62,14 +62,24 @@
 
   <!-- interactive marker nodes -->
   <group if="$(arg interactive)">
-    <node pkg="receding_planar_sys" name="interactive_marker"
-	  type="interactive_marker_ref_gen" output="screen" respawn="true" />
-    <node pkg="receding_planar_sys" name="marker_paths"
-	  type="marker_path.py" output="screen" respawn="true" />
+    <node pkg="receding_planar_sys" name="joystick_marker_ref_gen" type="joystick_marker_ref_gen.py" output="screen" respawn="true" />
+	<node pkg="joy" type="joy_node" name="joystick_node" output="screen" respawn="true">
+	  <param name="dev" value="/dev/input/js2"/>
+	</node>
+    <!-- <group unless="$(arg joy)">
+         <node pkg="receding_planar_sys" name="interactive_marker" type="interactive_marker_ref_gen" output="screen" respawn="true" />
+		 </group> -->
+    <node pkg="receding_planar_sys" name="marker_paths" type="marker_path.py" output="screen" respawn="true" />
   </group>
+
   <!-- load parameters for the limits of the world -->
   <rosparam command="load" 
 	    file="$(find receding_planar_sys)/launch/world_limits.yaml" />
+
+  <!-- load parameters for the limits of the world -->
+  <rosparam command="load" file="$(find receding_planar_sys)/launch/task_definitions.yaml" />
+  <!-- load parameters for the user trust history -->
+  <rosparam command="load" file="$(find receding_planar_sys)/launch/user_trust_history.yaml" />
 
   <!-- start serial node -->
   <node pkg="serial_node" type="multi_serial_topic" name="serial_node"
@@ -82,10 +92,14 @@
 
   <!-- start up emergency stop stuff -->
   <group if="$(arg joy)">
-    <!-- <param name="joy_node/dev" value="/dev/input/js0" /> -->
-    <node pkg="joy" type="joy_node" name="joystick_node" output="screen" respawn="true"/>
+	<node pkg="joy" type="joy_node" name="joystick_estop" output="screen" respawn="true">
+	  <param name="dev" value="/dev/input/js1"/>
+	  <remap from="joy" to="joy_emergency" />
+	</node>
     <node pkg="receding_planar_sys" name="emergency_stopper_joy" type="emergency_stopper_joy.py" 
-	  output="screen" respawn="true" />
+		  output="screen" respawn="true">
+	  <remap from="joy" to="joy_emergency" />
+	</node>
   </group>
 
   <!-- start up rviz unless visualization is set to false -->

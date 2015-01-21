@@ -41,6 +41,7 @@ import math
 import yaml
 import os
 import time
+import csv
 
 # global constants
 DT = 1/100.
