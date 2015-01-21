@@ -8,7 +8,7 @@ Panels:
         - /Status1
         - /TF1/Frames1
       Splitter Ratio: 0.681529
-    Tree Height: 359
+    Tree Height: 633
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -155,7 +155,7 @@ Visualization Manager:
       Marker Topic: /robot_1/mass_marker
       Name: Marker
       Namespaces:
-        markers: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -163,7 +163,7 @@ Visualization Manager:
       Marker Topic: /robot_1/limit_markers
       Name: Marker
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -209,12 +209,60 @@ Visualization Manager:
       Marker Topic: /robot_1/obstacle_markers
       Name: Marker
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /robot_1/current_target
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: false
+      Marker Topic: /robot_1/filtered_visualization_markers
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: false
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /robot_1/current_pose
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /robot_1/task_duration
+      Name: timer
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /robot_1/task_penalties
+      Name: penalty
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /robot_1/collision
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /robot_1/current_trust
       Name: Marker
       Namespaces:
         {}
@@ -277,5 +325,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1200
-  X: 700
-  Y: 118
+  X: 667
+  Y: 119
