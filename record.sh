@@ -8,25 +8,12 @@ if [ -n "$input" ]
 then
     filename=$1
 else
-    # read in args:
-    if [ -a ".recordargs" ]
-    then
-	argv=$(cat .recordargs)
-	eval set -- "$argv"
-	while getopts ":xf:" opt; do
-	    case "$opt" in
-		x)
-		    VIDEO=true
-		    ;;
-		f)
-		    filename=${OPTARG}
-		    ;;
-	    esac
-	done
-    else
-	echo "File .recordargs not found!"
-	exit 1
-    fi
+	# let's automatically calculate the filename:
+	NAME="trial"
+	PREFIX="data/"
+	num=$(ls ${PREFIX}${NAME}*bag | wc -l)
+	filename="${PREFIX}${NAME}_${num}"
+	VIDEO=true
 fi
 echo "Using '${filename}' as filename"
 echo "Using '${VIDEO}' for video arg"
