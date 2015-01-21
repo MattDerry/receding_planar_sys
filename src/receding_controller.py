@@ -56,6 +56,7 @@ from puppeteer_msgs.srv import PlanarSystemService
 from puppeteer_msgs.srv import PlanarSystemServiceRequest
 from puppeteer_msgs.srv import OperatingConditionChange
 from puppeteer_msgs.srv import OperatingConditionChangeRequest
+from puppeteer_msgs.srv import InputTrajectoryError
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Twist
@@ -65,6 +66,7 @@ from sensor_msgs.msg import Joy
 import numpy as np
 from collections import deque
 import copy
+import math
 
 # local imports
 import optimizer as op
@@ -151,6 +153,9 @@ class RecedingController:
         # create a service provider for the reference configuration
         self.config_serv = rospy.Service("get_ref_config", PlanarSystemService,
                                             self.ref_config_service_handler)
+
+        self.error_serv = rospy.Service("get_trajectory_error", InputTrajectoryError, self.error_calc_handler)
+
         # wait for service servers:
         rospy.loginfo("Waiting for operating_condition_change service")
         rospy.wait_for_service("/operating_condition_change")
@@ -198,7 +203,7 @@ class RecedingController:
             rospy.loginfo("Running direct control of robot and winch")
             self.setup_direct_controller()
             self.meas_sub = rospy.Subscriber("meas_config", PlanarSystemConfig, self.direct_cb)
-            self.joy_sub = rospy.Subscriber("/joy", Joy, self.joy_cb)
+            self.joy_sub = rospy.Subscriber("joy", Joy, self.joy_cb)
         else:
             rospy.logwarn("Unrecognized or impossible controller situation")
             rospy.logwarn("Falling back to receding controller")
@@ -261,6 +266,83 @@ class RecedingController:
                 'length' : length,
                 'time' : time,
                 }
+
+    def ref_trajectory_windowizer(self, dsys, Xref, tvec, twin):
+        winXref = np.zeros((len(twin), dsys.nX))
+        offset = 0
+        for i,t in enumerate(tvec):
+            if t == twin[0]:
+                offset = i
+        for i,t in enumerate(twin):
+            if i+offset < len(Xref):
+                winXref[i] = Xref[i+offset]  #not correct
+            else:
+                winXref[i] = Xref[len(Xref)-1]
+        winUref = winXref[1:, dsys.system.nQd:dsys.system.nQ]
+        return winXref, winUref
+
+    def error_calc_handler(self, req):
+        # create mvi and dsys:
+        rospy.loginfo("Raw Trajectory Length: %d", len(req.ref_trajectory))
+        mvi = sd.trep.MidpointVI(self.system)
+        t_len = len(req.ref_trajectory)
+        tvec = np.arange(0, self.dt*(t_len), self.dt)
+        twin = np.arange(0, self.dt*self.n_win, self.dt)
+        dsys = op.discopt.DSystem(mvi, twin)
+
+        # calculate reference trajectory
+        Xref = np.zeros((len(req.ref_trajectory), dsys.nX))
+        idx = 0
+        for p in req.ref_trajectory:
+            # get dynamic ref configuration in the plane:
+            qd = np.array([p.x, p.y])
+            # now fill in inverse-kinematic configuration variables:
+            qk = np.array([qd[0], sd.h0 - qd[1]])
+            Q = np.hstack((qd,qk))
+            # now fill in velocity and momentum:
+            Xtmp = np.hstack((Q, np.zeros(len(Q),)))
+            Xref[idx] = Xtmp
+            idx += 1
+
+        rec_opt = op.RecedingOptimizer(self.system, twin, DT=self.dt)
+        X = np.zeros((t_len, dsys.nX))
+        rospy.loginfo("[ERROR_CALC] tvec length: %d, X length: %d", len(tvec), len(X))
+        U = np.zeros((t_len-1, 2))
+        X[0] = Xref[0]
+        # run
+        for i,t in enumerate(tvec[:-2]):
+            # set IC for this window:
+            X0win = X[i]
+            # get the reference trajectory for this window:
+            Xrefwin,Urefwin = self.ref_trajectory_windowizer(dsys, Xref, tvec, twin + t)
+            # print X0win
+            # print dsys.kf()
+            # print Xrefwin.shape
+            # print Urefwin.shape
+            # get the initial guess for this window:
+            Xwin, Uwin = op.calc_initial_guess(dsys, X0win, Xrefwin, Urefwin)
+            # solve the optimization for this window:
+            err, Xoptwin, Uoptwin = rec_opt.optimize_window(self.Qcost, self.Rcost, Xrefwin, Urefwin, Xwin, Uwin)
+            # store results:
+            X[i+1] = Xoptwin[1]
+            U[i] = Uoptwin[0]
+
+        x_mse = 0.
+        y_mse = 0.
+        total_rms = 0.
+        i = 0
+        # calculate error:
+        for index in xrange(0,len(X)-1):
+            x_mse += pow(Xref[index][0] - X[index][0], 2)
+            y_mse += pow(Xref[index][1] - X[index][1], 2)
+            i += 1
+
+        x_mse = x_mse/i
+        y_mse = y_mse/i
+        total_mse = x_mse + y_mse
+        total_rms = math.sqrt(total_mse)
+        return {'rms' : total_rms,}
+
 
     def setup_direct_controller(self):
         self.current_command = Twist()
