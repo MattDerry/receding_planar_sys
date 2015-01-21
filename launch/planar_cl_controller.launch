@@ -95,7 +95,7 @@
   <!-- start up emergency stop stuff -->
   <group if="$(arg joy)">
 	<node pkg="joy" type="joy_node" name="joystick_estop" output="screen" respawn="true">
-	  <param name="dev" value="/dev/input/js1"/>
+	  <param name="dev" value="/dev/input/js0"/>
 	  <remap from="joy" to="joy_emergency" />
 	</node>
     <node pkg="receding_planar_sys" name="emergency_stopper_joy" type="emergency_stopper_joy.py" 
