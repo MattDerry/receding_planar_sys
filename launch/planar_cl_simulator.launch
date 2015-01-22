@@ -62,11 +62,8 @@
     <group if="$(arg interactive)">
       <node pkg="receding_planar_sys" name="joystick_marker_ref_gen" type="joystick_marker_ref_gen.py" output="screen" respawn="true" />
 	  <node pkg="joy" type="joy_node" name="joystick_node" output="screen" respawn="true">
-		<param name="dev" value="/dev/input/js2"/>
+		<param name="dev" value="/dev/input/js0"/>
 	  </node>
-      <!-- <group unless="$(arg joy)">
-           <node pkg="receding_planar_sys" name="interactive_marker" type="interactive_marker_ref_gen" output="screen" respawn="true" />
-		   </group> -->
       <node pkg="receding_planar_sys" name="marker_paths" type="marker_path.py" output="screen" respawn="true" />
     </group>
 
@@ -79,7 +76,6 @@
     <rosparam command="load" file="$(find receding_planar_sys)/data/user_trust_history.yaml" />
 
     <node pkg="receding_planar_sys" name="crane_task_coordinator" type="crane_task_definition.py" output="screen" respawn="true" />
-    <node pkg="joy" type="joy_node" name="joystick_node" output="screen" respawn="true"/>
   </group>
 
   <!-- start up emergency stop stuff -->
