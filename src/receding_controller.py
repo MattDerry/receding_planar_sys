@@ -329,19 +329,25 @@ class RecedingController:
 
         x_mse = 0.
         y_mse = 0.
+        ang_mse = 0.
+        ang_rms = 0.
         total_rms = 0.
         i = 0
         # calculate error:
         for index in xrange(0,len(X)-1):
             x_mse += pow(Xref[index][0] - X[index][0], 2)
             y_mse += pow(Xref[index][1] - X[index][1], 2)
+            ang = math.asin(math.fabs(X[index][0]-X[index][2])/X[index][3])
+            ang_mse += pow(ang, 2)
             i += 1
 
         x_mse = x_mse/i
         y_mse = y_mse/i
+        ang_mse = ang_mse/i
+        ang_rms = math.sqrt(ang_mse)
         total_mse = x_mse + y_mse
         total_rms = math.sqrt(total_mse)
-        return {'rms' : total_rms,}
+        return {'rms' : total_rms, 'angle_rms' : ang_rms}
 
 
     def setup_direct_controller(self):

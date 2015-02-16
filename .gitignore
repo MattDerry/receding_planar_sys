@@ -1,5 +1,8 @@
 # ignore these files
 *.pcd
+todo.txt
+hypotheses.txt
+*.pkl
 
 # ignore these directories and the files in them.
 *~

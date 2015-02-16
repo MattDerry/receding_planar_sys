@@ -1,0 +1,102 @@
+<launch>
+  <!-- ARGUMENT DEFINITIONS -->
+  <arg name="vis" default="true" /> <!-- run rviz? -->
+  <arg name="index" value="1" /> <!-- robot XBee value -->
+  <arg name="freq" default="10.0" /> <!-- receding horizon freq -->
+  <arg name="window" default="20" /> <!-- number of timesteps to look ahead -->
+  <arg name="tf" default="10.0" /> <!-- final time -->
+  <arg name="noise" default="0.0" /> <!-- amount of noise to add -->
+  <arg name="simfreq" default="10.0" /> <!-- frequency of the simulator -->
+  <arg name="cont" default="receding" /> <!-- what type of controller to use -->
+  <arg name="interactive" default="false" /> <!-- if true, we use an interactive ref generator -->
+  <arg name="joy" default="true" /> <!-- if true, use joystick emergency stopper -->
+
+  <!-- REFERENCE TRAJECTORY PARAMETERS -->
+  <arg name="tper" default="10.0" /> <!-- time to traverse trajectory -->
+  <arg name="rx" default="0.5" /> <!-- half-width of superellipse -->
+  <arg name="ry" default="0.125" /> <!-- half-height of superellipse -->
+  <arg name="power" default="2.5" /> <!-- power of superellipse -->
+  <!-- inverse of exponential ramp time constant (0.0 means no ramp, higher numbers mean slower ramp -->
+  <arg name="exponent" default="0.0" />
+  <arg name="r0" default="1.0" /> <!-- initial length of string in meters -->
+
+  <!-- first let's add the static frame broadcaster that broadcasts frames in a default config -->
+  <include file="$(find robot_simulator)/launch/default_calibration_frames.launch" />
+
+  <group ns="robot_1" >
+    <!-- tell robot simulator to not simulate occlusions -->
+    <param name="simulate_occlusions_bool" value="false" />
+    <arg name="rn" value="robot_1" />
+    <!-- set all parameters for this namespace -->
+    <param name="robot_index" value="$(arg index)" />
+    <param name="window_length" value="$(arg window)" type="int" />
+    <param name="controller_freq" value="$(arg freq)" type="double" />
+    <param name="simulator_freq" value="$(arg freq)" type="double" />
+    <param name="time_final" value="$(arg tf)" type="double" />
+    <param name="/simulator_noise" value="$(arg noise)" type="double" />
+    <param name="controller_type" value="$(arg cont)" type="string"/>
+
+    <include file="$(find robot_simulator)/launch/single_robot_simulator.launch" >
+      <arg name="rn" value="$(arg rn)" />
+    </include>
+
+    <!-- start up trep simulation and visualizer for mass position -->
+    <node pkg="robot_simulator" name="mass_simulator" type="suspended_mass_trep.py" output="screen" respawn="true" />
+    <node pkg="robot_simulator" name="marker" type="mass_marker" output="screen" respawn="true" />
+
+    <!-- now I want to set appropriate parameters and start up the controller -->
+    <node pkg="receding_planar_sys" name="receding_controller"
+      type="receding_controller.py" output="screen" respawn="true" >
+      <param name="tper" value="$(arg tper)" type="double"/>
+      <param name="rx" value="$(arg rx)" type="double"/>
+      <param name="ry" value="$(arg ry)" type="double"/>
+      <param name="power" value="$(arg power)" type="double"/>
+      <param name="exponent" value="$(arg exponent)" type="double"/>
+      <param name="r0" value="$(arg r0)" type="double"/>
+      <param name="interactive" value="$(arg interactive)" type="bool" />
+      <!-- load relevant matrices -->
+      <rosparam command="load" file="$(find receding_planar_sys)/launch/noise_and_control_params.yaml" />
+    </node>
+
+    <!-- interactive marker nodes -->
+    <group if="$(arg interactive)">
+      <node pkg="receding_planar_sys" name="joystick_marker_ref_gen" type="joystick_marker_ref_gen.py" output="screen" respawn="true" />
+    <node pkg="joy" type="joy_node" name="joystick_node" output="screen" respawn="true">
+    <param name="dev" value="/dev/input/js0"/>
+    </node>
+      <node pkg="receding_planar_sys" name="marker_paths" type="marker_path.py" output="screen" respawn="true" />
+    </group>
+
+    <!-- load parameters for the limits of the world -->
+    <rosparam command="load" file="$(find receding_planar_sys)/launch/eval_world_limits.yaml" />
+
+    <!-- load parameters for the limits of the world -->
+    <rosparam command="load" file="$(find receding_planar_sys)/launch/eval_task_definitions.yaml" />
+    <!-- load parameters for the user trust history -->
+    <rosparam command="load" file="$(find receding_planar_sys)/data/user_trust_history.yaml" />
+
+    <node pkg="receding_planar_sys" name="dynamic_crane_task_coordinator" type="metric_eval_task.py" output="screen" respawn="true" />
+  </group>
+
+  <!-- start up emergency stop stuff -->
+  <group if="$(arg joy)">
+  <node pkg="joy" type="joy_node" name="joystick_estop" output="screen" respawn="true">
+    <param name="dev" value="/dev/input/js1"/>
+    <remap from="joy" to="joy_emergency" />
+  </node>
+    <node pkg="receding_planar_sys" name="emergency_stopper_joy" type="emergency_stopper_joy.py"
+      output="screen" respawn="true">
+    <remap from="joy" to="joy_emergency" />
+  </node>
+  </group>
+
+  <!-- start up the keyboard node -->
+  <param name="robot_index" value="$(arg index)" />
+  <node pkg="keyboard_node" type="multi_keyboard_node" name="keyboard_interface" output="screen" respawn="true"	launch-prefix="xterm -e" />
+
+  <!-- start up rviz unless visualization is set to false -->
+  <group if="$(arg vis)">
+    <node pkg="rviz" type="rviz" respawn="false" name="rviz" args="-d $(find receding_planar_sys)/launch/interactive_robot.rviz" />
+  </group>
+
+</launch>

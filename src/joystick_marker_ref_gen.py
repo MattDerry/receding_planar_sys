@@ -340,8 +340,6 @@ class MarkerControls:
         self.joy_sub = rospy.Subscriber("joy", Joy, self.joy_cb)
         # create current position marker publisher
         self.current_pose_pub = rospy.Publisher("current_pose", Marker, queue_size=1)
-        self.trust_pub = rospy.Publisher("current_trust", Marker, queue_size=2)
-        self.trust_marker = makeTrustMarker(trial_trust)
         # wait for service servers:
         rospy.loginfo("Waiting for get_trajectory_error service")
         rospy.wait_for_service("get_trajectory_error")
@@ -367,7 +365,6 @@ class MarkerControls:
         #self.operating_condition = data.state
         if data.state == OperatingCondition.RUN and self.operating_condition != OperatingCondition.RUN:
             self.controllers.append(SingleController(MARKERFRAME, MARKERWF, color='green'))
-            self.trust_pub.publish(self.trust_marker)
             # create subscriber for current mass position
             #self.filt_state_sub = rospy.Subscriber("filt_state", PlanarSystemState, self.state_cb)
             self.filt_state_sub = rospy.Subscriber("meas_config", PlanarSystemConfig, self.state_cb)
@@ -530,6 +527,11 @@ def main():
 
     rospy.loginfo("[JOY] TRIAL NUMBER: %d", len(trust_history))
     # Calculate cutoff frequency from trust
+
+    # REMOVE ME!!!!!!!!!!!!!!!!!!!!!!!!!
+    trial_trust = 1.0
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
     global CUTOFF
     CUTOFF = (MAX_CF-MIN_CF)*pow(trial_trust, 3) + MIN_CF
 
