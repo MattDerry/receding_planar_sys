@@ -69,7 +69,7 @@ class TaskStateMachine:
         self.consecutive_in_targets = 0
         self.IN_TARGETS_THRESHOLD = 20
         self.COLLISION_TIME_PENALTY = 10
-        self.mass_radius = 0.05
+        self.mass_radius = 0.03
         self.in_obstacle = False
 
         self.obstacles = []
@@ -149,7 +149,7 @@ class TaskStateMachine:
                 self.collision_pub.publish(obstacle.collision_marker)
 
     def in_range(self, mass_pos, xmin, xmax, ymin, ymax):
-        if mass_pos.xm >= xmin and mass_pos.xm <= xmax and mass_pos.ym >= ymin and mass_pos.ym <= ymax:
+        if mass_pos.xm > xmin and mass_pos.xm < xmax and mass_pos.ym > ymin and mass_pos.ym < ymax:
             return True
         else:
             return False
@@ -172,7 +172,7 @@ class TaskStateMachine:
             marker.color.b = 0.2
             marker.color.a = 0.6
             marker.pose.position.x = -0.55
-            marker.pose.position.y = 0.67
+            marker.pose.position.y = 0.80
             marker.pose.position.z = -0.1
             marker.text = "Task Duration: 0.0 seconds"
             marker.lifetime = rospy.Duration()
@@ -206,13 +206,13 @@ class TaskStateMachine:
             marker.type = Marker.TEXT_VIEW_FACING
             marker.scale.x = 1.0
             marker.scale.y = 1.0
-            marker.scale.z = 0.2
+            marker.scale.z = 0.08
             marker.color.r = 1.0
             marker.color.g = 1.0
             marker.color.b = 0.2
             marker.color.a = 0.8
-            marker.pose.position.x = 0.0
-            marker.pose.position.y = 0.0
+            marker.pose.position.x = 0.75
+            marker.pose.position.y = 0.80
             marker.pose.position.z = -0.1
             marker.text = "Score: 0.0"
             marker.lifetime = rospy.Duration()

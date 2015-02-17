@@ -83,14 +83,15 @@ class Obstacle:
         self.activation_time = rospy.Time.now()
         self.marker.header.stamp = rospy.Time.now()
 
-    def mass_in_collision(self, mass_pos, mass_radius):
+    def mass_in_collision(self, mass_pos, mass_radius=0.03):
         if self.state == self.possible_states.ACTIVE:
             if self.marker.type == Marker.CUBE:
-                xmin = self.marker.pose.position.x - (self.marker.scale.x/2. + (mass_radius/2.))
-                xmax = xmin + self.marker.scale.x + mass_radius
-                ymin = self.marker.pose.position.y - (self.marker.scale.y/2. + (mass_radius/2.))
-                ymax = ymin + self.marker.scale.y + mass_radius
+                xmin = self.marker.pose.position.x - (self.marker.scale.x/2. + mass_radius)
+                xmax = xmin + self.marker.scale.x + (2.*mass_radius)
+                ymin = self.marker.pose.position.y - (self.marker.scale.y/2. + mass_radius)
+                ymax = ymin + self.marker.scale.y + (2.*mass_radius)
                 if self.in_range(mass_pos, xmin, xmax, ymin, ymax):
+                    #rospy.loginfo("[OBSTACLE] Collision in range: x:(%f, %f), y:(%f, %f), state:(%f, %f), radius: (%f, %f)", xmin, xmax, ymin, ymax, mass_pos.xm, mass_pos.ym, mass_radius, mass_radius/2.0)
                     self.collision_marker.pose.position.x = self.marker.pose.position.x
                     self.collision_marker.pose.position.y = self.marker.pose.position.y
                     self.collision_marker.scale.x = self.marker.scale.x
@@ -150,6 +151,12 @@ class Obstacle:
     def distance(self, p1x, p1y, p2x, p2y):
         return math.sqrt(math.pow(p2x-p1x,2) + math.pow(p2y - p1y, 2))
 
+    def in_range(self, mass_pos, xmin, xmax, ymin, ymax):
+        if mass_pos.xm > xmin and mass_pos.xm < xmax and mass_pos.ym > ymin and mass_pos.ym < ymax:
+            return True
+        else:
+            return False
+
 class ObstacleFactory:
     def __init__(self, frame, world_xlim, world_ylim):
         self.frame_id = frame
@@ -208,7 +215,7 @@ class ObstacleFactory:
         marker.color.a = 0.8
         marker.pose.position.x = o_marker.pose.position.x
         marker.pose.position.y = o_marker.pose.position.y
-        marker.pose.position.z = -0.1
+        marker.pose.position.z = -0.01
         marker.header.frame_id = o_marker.header.frame_id
         marker.header.stamp = rospy.Time.now()
         return marker

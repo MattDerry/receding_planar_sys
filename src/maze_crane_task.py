@@ -52,11 +52,11 @@ MARKER_DT = 1/20.
 ERROR_SCALING = 450.0
 
 MAX_SCORE = 100
-TIME_WEIGHT = 1
+TIME_WEIGHT = .1
 ERROR_WEIGHT = 10000
 COLLISION_WEIGHT = 20
 
-class DynamicTaskStateMachine(TaskStateMachine):
+class MazeTaskStateMachine(TaskStateMachine):
     def __init__(self, x_world_limits, y_world_limits):
         TaskStateMachine.__init__(self, x_world_limits, y_world_limits)
         self.sim_dt = DT
@@ -76,12 +76,11 @@ class DynamicTaskStateMachine(TaskStateMachine):
         pickle.dump(self.trial_num, pkl_file)
         pkl_file.close()
         self.get_obstacles(self.trial_num)
-        rospy.loginfo("[DCRANE] Has %d obstacles after get_obstacles", len(self.obstacles))
+        rospy.loginfo("[MAZE] Has %d obstacles after get_obstacles", len(self.obstacles))
         self.all_targets = []
         self.available_targets = []
         self.used_targets = []
-        self.all_targets.append(self.target_factory.make_random_target_in_range(0.5, 0.9, -0.4, 0.65, 0.1))
-        self.all_targets.append(self.target_factory.make_random_target_in_range(-0.9, -0.5, -0.4, 0.65, 0.1))
+        self.get_targets()
         self.available_targets = self.all_targets
         self.target_count = 0
         self.previous_time = rospy.Time.now()
@@ -97,7 +96,8 @@ class DynamicTaskStateMachine(TaskStateMachine):
                 self.consecutive_in_targets = 0
                 self.user_score = MAX_SCORE
             else:
-                rospy.loginfo("[CRANE]Published Target")
+                rospy.loginfo("[MAZE] Published Target")
+                time.sleep(2.0)
                 self.start_timer()
                 self.previous_time = rospy.Time.now()
                 index = random.randint(0, len(self.available_targets)-1)
@@ -114,7 +114,7 @@ class DynamicTaskStateMachine(TaskStateMachine):
                 self.current_state = self.states.TRACKING_TO_TARGET
         elif self.current_state == self.states.COMPLETED_TARGET:
                 if self.target_count > 1:
-                    rospy.loginfo("[CRANE]Task Completed")
+                    rospy.loginfo("[MAZE]Task Completed")
                     self.stop_timer()
                     self.current_state = self.states.COMPLETED_TASK
                     try:
@@ -123,19 +123,19 @@ class DynamicTaskStateMachine(TaskStateMachine):
                         time.sleep(2.0)
                         traj_res = self.trajectory_client()
                         error_response = self.trajectory_error_client(traj_res.ref_trajectory, traj_res.times)
-                        rospy.loginfo("[CRANE] Error for use in trust calculation: %f", error_response.rms)
+                        rospy.loginfo("[MAZE] Error for use in trust calculation: %f", error_response.rms)
                         trial_trust = self.calc_trust(ERROR_SCALING, error_response.rms)
                         score = self.calc_score(error_response.rms, self.task_collisions, self.task_duration)
                         rospy.loginfo("Score: %f, error: %f, collisions: %d, duration: %f", score, error_response.rms, self.task_collisions, self.task_duration)
                         self.score_marker.text = "Score: %.1f" % score
                         self.score_marker.header.stamp = rospy.Time.now()
                         self.score_pub.publish(self.score_marker)
-                        rospy.loginfo("[CRANE] Trust for last trial: %.3f", trial_trust)
+                        rospy.loginfo("[MAZE] Trust for last trial: %.3f", trial_trust)
                         pkg_dir = roslib.packages.get_pkg_dir("receding_planar_sys")
                         file_name = pkg_dir + '/data/user_task_time_log.csv'
                         with open(file_name, 'a') as timelogfile:
                             wr = csv.writer(timelogfile, quoting=csv.QUOTE_ALL)
-                            wr.writerow([self.task_duration, self.task_penalties, self.task_final_time, res.trust_estimate, res.cutoff_frequency, res.alpha, error_response.rms, trial_trust])
+                            wr.writerow([self.task_duration, self.task_penalties, self.task_final_time, res.trust_estimate, res.cutoff_frequency, res.alpha, error_response.rms, error_response.angle_rms, trial_trust])
                             rospy.loginfo("Wrote time log entry")
                         if rospy.has_param("user_trust_history"):
                             trust_history = rospy.get_param("user_trust_history")
@@ -158,7 +158,7 @@ class DynamicTaskStateMachine(TaskStateMachine):
                     self.current_state = self.states.READY
                     self.consecutive_in_targets = 0
                 else:
-                    rospy.loginfo("[CRANE]Published Target")
+                    rospy.loginfo("[MAZE]Published Target")
                     index = random.randint(0, len(self.available_targets)-1)
                     self.current_target = self.available_targets[index]
                     self.current_target.update_target_state(self.current_target.possible_states.ACTIVE)
@@ -172,18 +172,18 @@ class DynamicTaskStateMachine(TaskStateMachine):
         elif self.current_state == self.states.TRACKING_TO_TARGET:
             self.update_obstacles()
             if self.in_current_target(mass_pos):
-                rospy.logdebug("[CRANE]In Target")
+                rospy.logdebug("[MAZE]In Target")
                 self.consecutive_in_targets += 1
                 if self.consecutive_in_targets > self.IN_TARGETS_THRESHOLD:
-                    rospy.loginfo("[CRANE]Completed Target")
+                    rospy.loginfo("[MAZE]Completed Target")
                     self.target_count += 1
                     self.current_state = self.states.COMPLETED_TARGET
             else:
-                rospy.logdebug("[CRANE]Reset Current Target")
+                rospy.logdebug("[MAZE]Reset Current Target")
                 self.consecutive_in_targets = 0
                 self.in_obstacle = False
             if self.mass_in_obstacle(mass_pos):
-                rospy.logdebug("[CRANE]In Obstacle")
+                rospy.logdebug("[MAZE]In Obstacle")
                 if not self.in_obstacle:
                     self.task_collisions += 1
                     self.publish_collisions(mass_pos)
@@ -208,9 +208,18 @@ class DynamicTaskStateMachine(TaskStateMachine):
             score = 0
         return score
 
+    def get_targets(self):
+        if rospy.has_param("targets"):
+            rospy.loginfo("[MAZE] Has targets")
+            target_params = rospy.get_param("targets")
+            for targ in target_params:
+                rospy.loginfo("TARG (xpos: %f, ypos: %f, rad: %f", targ[0], targ[1], targ[2])
+                self.all_targets.append(self.target_factory.make_target(targ[0], targ[1], targ[2]))
+            rospy.loginfo("[MAZE] Has %d targets in get_targets", len(self.all_targets))
+
     def get_obstacles(self, seed):
         if rospy.has_param("obstacles"):
-            rospy.loginfo("[CRANE]Has obstacles")
+            rospy.loginfo("[MAZE]Has obstacles")
             obstacle_params = rospy.get_param("obstacles")
             random = Random(seed)
             for obs in obstacle_params:
@@ -235,7 +244,7 @@ class DynamicTaskStateMachine(TaskStateMachine):
                     o.bounce_on_limit_collision = obs[8]
                     o.clockwise = obs[6]
                     self.obstacles.append(o)
-            rospy.loginfo("[DCRANE] Has %d obstacles in get_obstacles", len(self.obstacles))
+            rospy.loginfo("[MAZE] Has %d obstacles in get_obstacles", len(self.obstacles))
 
 class CraneTaskCoordinator:
     def __init__(self):
@@ -248,7 +257,7 @@ class CraneTaskCoordinator:
         self.limit_marker = None
         self.limit_marker = self.make_limit_marker()
         self.limit_pub = rospy.Publisher("limit_markers", Marker, queue_size=1)
-        self.tsm = DynamicTaskStateMachine(self.xlim, self.ylim)
+        self.tsm = MazeTaskStateMachine(self.xlim, self.ylim)
         self.operating_condition = OperatingCondition.IDLE
         # create subscriber for operating condition
         self.op_cond_sub = rospy.Subscriber("/operating_condition", OperatingCondition, self.op_cb)
@@ -263,9 +272,9 @@ class CraneTaskCoordinator:
 
     def op_cb(self, msg):
         if msg.state == OperatingCondition.RUN and self.operating_condition != OperatingCondition.RUN:
-            rospy.loginfo("[DCRANE] Check Limit Marker")
+            rospy.loginfo("[MAZE] Check Limit Marker")
             if self.limit_marker is not None:
-                rospy.loginfo("[DCRANE] Publish Limit Marker")
+                rospy.loginfo("[MAZE] Publish Limit Marker")
                 self.limit_pub.publish(self.limit_marker)
         self.operating_condition = msg.state
 
@@ -301,7 +310,7 @@ class CraneTaskCoordinator:
 
 
 def main():
-    rospy.init_node('dynamic_crane_task_coordinator')
+    rospy.init_node('maze_crane_task_coordinator')
     try:
         sim = CraneTaskCoordinator()
     except rospy.ROSInterruptException: pass

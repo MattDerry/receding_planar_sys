@@ -80,7 +80,7 @@ class MetricEvalTaskStateMachine(TaskStateMachine):
         self.available_targets.append(self.target_factory.make_target(0.0, 0.0, 0.1))
         self.target_count = 0
         self.previous_time = rospy.Time.now()
-        self.mass_radius = 0.1
+        self.mass_radius = 0.03
         self.timeout = False
         return
 
@@ -118,17 +118,7 @@ class MetricEvalTaskStateMachine(TaskStateMachine):
                 self.consecutive_in_targets = 0
                 self.current_state = self.states.TRACKING_TO_TARGET
         elif self.current_state == self.states.COMPLETED_TARGET:
-                if self.timeout:
-                    self.stop_timer()
-                    rospy.loginfo("[MEVAL] Timeout")
-                    pkg_dir = roslib.packages.get_pkg_dir("receding_planar_sys")
-                    file_name = pkg_dir + '/data/user_eval_log.csv'
-                    with open(file_name, 'a') as timelogfile:
-                        wr = csv.writer(timelogfile, quoting=csv.QUOTE_ALL)
-                        wr.writerow(['timeout'])
-                        rospy.loginfo("Wrote time log entry")
-                    self.current_state = self.states.READY
-                elif self.target_count > 1:
+                if self.target_count > 1:
                     rospy.loginfo("[MEVAL]Task Completed")
                     self.stop_timer()
                     self.current_state = self.states.COMPLETED_TASK
@@ -187,6 +177,10 @@ class MetricEvalTaskStateMachine(TaskStateMachine):
         self.timing_marker.text = "Countdown: %.1f seconds" % countdown
         if countdown < 0.0:
             self.timeout = True
+            self.timing_marker.color.r = 1.0
+            self.timing_marker.color.g = 0.0
+            self.timing_marker.color.b = 0.0
+            self.timing_marker.color.a = 1.0
         self.timing_marker.header.stamp = rospy.Time.now()
         self.task_timer_pub.publish(self.timing_marker)
 
