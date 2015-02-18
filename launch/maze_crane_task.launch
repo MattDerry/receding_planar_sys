@@ -70,8 +70,6 @@
     <!-- load parameters for the limits of the world -->
     <rosparam command="load" file="$(find receding_planar_sys)/launch/world_limits.yaml" />
 
-    <!-- load parameters for the limits of the world -->
-    <rosparam command="load" file="$(find receding_planar_sys)/launch/maze_task_definitions.yaml" />
     <!-- load parameters for the user trust history -->
     <rosparam command="load" file="$(find receding_planar_sys)/data/user_trust_history.yaml" />
 

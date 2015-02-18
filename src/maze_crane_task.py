@@ -11,6 +11,7 @@ mimics crane usage where obstacle regions are defined and target goals pop up to
 import rospy
 import roslib
 import tf
+import rosparam
 import visualization_msgs.msg as VM
 from visualization_msgs.msg import Marker
 import std_srvs.srv as SS
@@ -69,6 +70,17 @@ class MazeTaskStateMachine(TaskStateMachine):
             pkl_file.close()
         else:
             self.trial_num = 0
+
+        if self.trial_num % 2 == 0:
+            rospy.loginfo("Load Task Definition YAML 0")
+            file_name = pkg_dir + '/launch/0_maze_task_definitions.yaml'
+        else:
+            rospy.loginfo("Load Task Definition YAML 1")
+            file_name = pkg_dir + '/launch/1_maze_task_definitions.yaml'
+        paramlist=rosparam.load_file(file_name)
+        for params, ns in paramlist:
+            rosparam.upload_params(ns,params)
+
         self.get_obstacles(self.trial_num)
         rospy.loginfo("[MAZE] Has %d obstacles after get_obstacles", len(self.obstacles))
         self.all_targets = []

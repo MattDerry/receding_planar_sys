@@ -538,9 +538,8 @@ def main():
     rospy.loginfo("[JOY] TRIAL NUMBER: %d", len(trust_history))
     # Calculate cutoff frequency from trust
 
-    # REMOVE ME!!!!!!!!!!!!!!!!!!!!!!!!!
-    trial_trust = 1.0
-    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    if not rospy.has_param("adapt_trust"):
+        trial_trust = 1.0
 
     global CUTOFF
     CUTOFF = (MAX_CF-MIN_CF)*pow(trial_trust, 3) + MIN_CF
