@@ -482,8 +482,8 @@ class MarkerControls:
             upt.header.frame_id = MARKERWF
             upt.point.x = upos.x
             upt.point.y = upos.y
-            upt.point.z = upos.z            
-            unfilt_marker_pub.publish(upt)
+            upt.point.z = upos.z
+            self.unfilt_marker_pub.publish(upt)
             m = con.int_marker
             m.header = con.int_marker.header
             m.pose = con.int_marker.pose
