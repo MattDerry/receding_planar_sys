@@ -34,9 +34,10 @@ PKLNAME = os.path.join(pkgpath, PKLNAME)
 if os.path.exists(PKLNAME):
     NUM = pickle.load(open(PKLNAME, "rb"))
 else:
-    print "[ERROR] No pickle file found:"
+    print "[WARN] No pickle file found!"
     print "name =",PKLNAME
-    sys.exit(1)
+    NUM = 0
+    print "Record script Assuming trial ",NUM
 
 # recording file name:
 fname = "{0:s}_trial{1:d}{2:s}".format(NAME, NUM, EXT)
