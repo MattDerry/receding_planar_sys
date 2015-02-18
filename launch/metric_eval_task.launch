@@ -11,7 +11,8 @@
   <arg name="interactive" default="false" /> <!-- if true, we use an interactive ref generator -->
   <arg name="joy" default="true" /> <!-- if true, use joystick emergency stopper -->
   <arg name="user" /> <!-- user name or indicator of some kind -->
-
+  <arg name="record" default="true" /> <!-- should we bag data? -->
+  
   <!-- REFERENCE TRAJECTORY PARAMETERS -->
   <arg name="tper" default="10.0" /> <!-- time to traverse trajectory -->
   <arg name="rx" default="0.5" /> <!-- half-width of superellipse -->
@@ -81,8 +82,10 @@
 
   
   <!-- start up recording of data -->
-  <node pkg="receding_planar_sys" name="recording_node" type="record_data.py"
-		output="screen" respawn="false" args="-u $(arg user)"/>
+  <group if="$(arg record)">
+	<node pkg="receding_planar_sys" name="recording_node" type="record_data.py"
+		  output="screen" respawn="false" args="-u $(arg user)"/>
+  </group>
   
   
   <!-- start up emergency stop stuff -->
