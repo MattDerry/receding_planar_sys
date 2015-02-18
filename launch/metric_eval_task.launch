@@ -10,6 +10,7 @@
   <arg name="cont" default="receding" /> <!-- what type of controller to use -->
   <arg name="interactive" default="false" /> <!-- if true, we use an interactive ref generator -->
   <arg name="joy" default="true" /> <!-- if true, use joystick emergency stopper -->
+  <arg name="user" /> <!-- user name or indicator of some kind -->
 
   <!-- REFERENCE TRAJECTORY PARAMETERS -->
   <arg name="tper" default="10.0" /> <!-- time to traverse trajectory -->
@@ -78,6 +79,12 @@
     <node pkg="receding_planar_sys" name="dynamic_crane_task_coordinator" type="metric_eval_task.py" output="screen" respawn="true" />
   </group>
 
+  
+  <!-- start up recording of data -->
+  <node pkg="receding_planar_sys" name="recording_node" type="record_data.py"
+		output="screen" respawn="false" args="-u $(arg user)"/>
+  
+  
   <!-- start up emergency stop stuff -->
   <group if="$(arg joy)">
   <node pkg="joy" type="joy_node" name="joystick_estop" output="screen" respawn="true">
@@ -99,4 +106,5 @@
     <node pkg="rviz" type="rviz" respawn="false" name="rviz" args="-d $(find receding_planar_sys)/launch/interactive_robot.rviz" />
   </group>
 
+  
 </launch>
