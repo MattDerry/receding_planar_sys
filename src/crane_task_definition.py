@@ -409,12 +409,6 @@ class TaskStateMachine:
                     self.consecutive_in_targets = 0
                     self.current_state = self.states.TRACKING_TO_TARGET
         elif self.current_state == self.states.TRACKING_TO_TARGET:
-            self.check_and_deactivate_expired_obstacles()
-            self.activate_obstacles()
-            while self.count_active_obstacles() < 2:
-                idx = random.randint(0,len(self.available_obstacle_ids)-1)
-                self.preactivate_obstacle(self.available_obstacle_ids[idx])
-                del self.available_obstacle_ids[idx]
             if self.in_current_target(mass_pos):
                 rospy.logdebug("[CRANE]In Target")
                 self.consecutive_in_targets += 1
@@ -422,16 +416,6 @@ class TaskStateMachine:
                     rospy.loginfo("[CRANE]Completed Target")
                     self.target_count += 1
                     self.current_state = self.states.COMPLETED_TARGET
-            elif self.in_obstacle(mass_pos):
-                rospy.logdebug("[CRANE]In Obstacle")
-                if not self.in_obst:
-                    self.task_penalties += TASK_COLLISION_TIME_PENALTY
-                    self.penalty_marker.text = "Penalty: +%.1f seconds" % self.task_penalties
-                    self.penalty_marker.header.stamp = rospy.Time.now()
-                    self.task_pen_pub.publish(self.penalty_marker)
-                    self.collision_marker.header.stamp = rospy.Time.now()
-                    self.collision_pub.publish(self.collision_marker)
-                self.in_obst = True
             else:
                 rospy.logdebug("[CRANE]Reset Current Target")
                 self.consecutive_in_targets = 0
