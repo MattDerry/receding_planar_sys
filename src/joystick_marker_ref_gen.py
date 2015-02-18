@@ -330,6 +330,7 @@ class MarkerControls:
         self.operating_condition = OperatingCondition.IDLE
         # create publisher
         self.marker_pub = rospy.Publisher("mass_ref_point", PointStamped, queue_size=3)
+        self.unfilt_marker_pub = rospy.Publisher("unfiltered_mass_ref_point", PointStamped, queue_size=3)
         # publish markers for drawing paths
         self.con_pub = rospy.Publisher("visualization_markers", VM.MarkerArray, queue_size=3)
         # publish markers for drawing paths
@@ -474,6 +475,15 @@ class MarkerControls:
             pt.point.z = pos.z
             self.marker_pub.publish(pt)
             self.current_pose_pub.publish(con.int_marker)
+            upos = con.int_marker.pose.position
+            uquat = con.int_marker.pose.orientation
+            upt = PointStamped()
+            upt.header.stamp = tnow
+            upt.header.frame_id = MARKERWF
+            upt.point.x = upos.x
+            upt.point.y = upos.y
+            upt.point.z = upos.z            
+            unfilt_marker_pub.publish(upt)
             m = con.int_marker
             m.header = con.int_marker.header
             m.pose = con.int_marker.pose
