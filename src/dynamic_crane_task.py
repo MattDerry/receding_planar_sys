@@ -66,15 +66,9 @@ class DynamicTaskStateMachine(TaskStateMachine):
         if os.path.isfile(file_name):
             pkl_file = open(file_name, 'rb')
             self.trial_num = pickle.load(pkl_file)
-            self.trial_num += 1
-            if self.trial_num > 15:
-                self.trial_num = 0
             pkl_file.close()
         else:
             self.trial_num = 0
-        pkl_file = open(file_name, 'w+')
-        pickle.dump(self.trial_num, pkl_file)
-        pkl_file.close()
         self.get_obstacles(self.trial_num)
         rospy.loginfo("[DCRANE] Has %d obstacles after get_obstacles", len(self.obstacles))
         self.all_targets = []
@@ -130,8 +124,12 @@ class DynamicTaskStateMachine(TaskStateMachine):
                         self.score_marker.text = "Score: %.1f" % score
                         self.score_marker.header.stamp = rospy.Time.now()
                         self.score_pub.publish(self.score_marker)
-                        rospy.loginfo("[CRANE] Trust for last trial: %.3f", trial_trust)
                         pkg_dir = roslib.packages.get_pkg_dir("receding_planar_sys")
+                        file_name = pkg_dir + '/trial_num.pkl'
+                        pkl_file = open(file_name, 'w+')
+                        pickle.dump(self.trial_num+1, pkl_file)
+                        pkl_file.close()
+                        rospy.loginfo("[CRANE] Trust for last trial: %.3f", trial_trust)
                         file_name = pkg_dir + '/data/user_task_time_log.csv'
                         with open(file_name, 'a') as timelogfile:
                             wr = csv.writer(timelogfile, quoting=csv.QUOTE_ALL)
@@ -181,13 +179,14 @@ class DynamicTaskStateMachine(TaskStateMachine):
             else:
                 rospy.logdebug("[CRANE]Reset Current Target")
                 self.consecutive_in_targets = 0
-                self.in_obstacle = False
             if self.mass_in_obstacle(mass_pos):
                 rospy.logdebug("[CRANE]In Obstacle")
                 if not self.in_obstacle:
                     self.task_collisions += 1
                     self.publish_collisions(mass_pos)
                 self.in_obstacle = True
+            else:
+                self.in_obstacle = False
 
     def update_obstacles(self):
         self.current_time = rospy.Time.now()

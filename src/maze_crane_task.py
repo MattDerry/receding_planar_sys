@@ -54,7 +54,7 @@ ERROR_SCALING = 450.0
 MAX_SCORE = 100
 TIME_WEIGHT = .1
 ERROR_WEIGHT = 10000
-COLLISION_WEIGHT = 20
+COLLISION_WEIGHT = 50
 
 class MazeTaskStateMachine(TaskStateMachine):
     def __init__(self, x_world_limits, y_world_limits):
@@ -66,15 +66,9 @@ class MazeTaskStateMachine(TaskStateMachine):
         if os.path.isfile(file_name):
             pkl_file = open(file_name, 'rb')
             self.trial_num = pickle.load(pkl_file)
-            self.trial_num += 1
-            if self.trial_num > 15:
-                self.trial_num = 0
             pkl_file.close()
         else:
             self.trial_num = 0
-        pkl_file = open(file_name, 'w+')
-        pickle.dump(self.trial_num, pkl_file)
-        pkl_file.close()
         self.get_obstacles(self.trial_num)
         rospy.loginfo("[MAZE] Has %d obstacles after get_obstacles", len(self.obstacles))
         self.all_targets = []
@@ -148,6 +142,10 @@ class MazeTaskStateMachine(TaskStateMachine):
                             data = {'user_trust_history' : trust_history}
                             yaml_file.write( yaml.dump(data, default_flow_style=False))
                             rospy.loginfo("Wrote history file")
+                        file_name = pkg_dir + '/trial_num.pkl'
+                        pkl_file = open(file_name, 'w+')
+                        pickle.dump(self.trial_num+1, pkl_file)
+                        pkl_file.close()
                         rospy.loginfo("Done")
                         rospy.loginfo(os.getcwd())
                     except rospy.ServiceException, e:
@@ -181,13 +179,14 @@ class MazeTaskStateMachine(TaskStateMachine):
             else:
                 rospy.logdebug("[MAZE]Reset Current Target")
                 self.consecutive_in_targets = 0
-                self.in_obstacle = False
             if self.mass_in_obstacle(mass_pos):
                 rospy.logdebug("[MAZE]In Obstacle")
                 if not self.in_obstacle:
                     self.task_collisions += 1
                     self.publish_collisions(mass_pos)
                 self.in_obstacle = True
+            else:
+                self.in_obstacle = False
 
     def update_obstacles(self):
         self.current_time = rospy.Time.now()

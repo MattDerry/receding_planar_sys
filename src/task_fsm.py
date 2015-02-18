@@ -55,12 +55,15 @@ class TaskStates:
 class TaskStateMachine:
     def __init__(self, x_world_limits, y_world_limits):
         self.frame_id = 'optimization_frame'
+        self.xlim = x_world_limits
+        self.ylim = y_world_limits
         self.sim_dt = 1/100.
         self.marker_dt = 1/20.
         self.states = TaskStates()
         self.current_target = None
         self.timing_marker = self.make_timing_marker()
         self.score_marker = self.make_score_marker()
+        self.limit_collision_marker = self.make_limit_collision_marker()
         self.task_start_time = rospy.Time.now()
         self.task_duration = 0.0
         self.task_final_time = 0.0
@@ -75,21 +78,19 @@ class TaskStateMachine:
         self.obstacles = []
         self.targets = []
 
-        self.xlim = x_world_limits
-        self.ylim = y_world_limits
-
         self.obstacle_factory = ObstacleFactory(self.frame_id, self.xlim, self.ylim)
         self.target_factory = TargetFactory(self.frame_id, self.xlim, self.ylim)
 
         self.current_state = self.states.READY
 
         # create current target marker publisher
-        self.target_pub = rospy.Publisher("current_target", Marker, queue_size=1)
+        self.target_pub = rospy.Publisher("current_target", Marker, queue_size=2)
         self.task_timer_pub = rospy.Publisher("task_duration", Marker, queue_size=2)
         self.task_pen_pub = rospy.Publisher("task_penalties", Marker, queue_size=1)
-        self.collision_pub = rospy.Publisher("collision", Marker, queue_size=1)
-        self.obstacle_pub = rospy.Publisher("obstacle_markers", Marker, queue_size=5)
+        self.collision_pub = rospy.Publisher("collision", Marker, queue_size=2)
+        self.obstacle_pub = rospy.Publisher("obstacle_markers", Marker, queue_size=15)
         self.score_pub = rospy.Publisher("user_score", Marker, queue_size=2)
+        self.limit_collision_pub = rospy.Publisher("limit_collision", Marker, queue_size=2)
 
         rospy.wait_for_service("/operating_condition_change")
         self.op_change_client = rospy.ServiceProxy("/operating_condition_change", OperatingConditionChange)
@@ -140,6 +141,8 @@ class TaskStateMachine:
         for obstacle in self.obstacles:
             if obstacle.mass_in_collision(mass_pos, self.mass_radius):
                 return True
+        if not self.in_range(mass_pos, self.xlim[0]+self.mass_radius, self.xlim[1]-self.mass_radius, self.ylim[0]+self.mass_radius, self.ylim[1]-self.mass_radius):
+            return True
         return False
 
     def publish_collisions(self, mass_pos):
@@ -147,6 +150,11 @@ class TaskStateMachine:
             if obstacle.mass_in_collision(mass_pos, self.mass_radius):
                 obstacle.collision_marker.header.stamp = rospy.Time.now()
                 self.collision_pub.publish(obstacle.collision_marker)
+
+        if self.limit_collision_marker is not None:
+            if not self.in_range(mass_pos, self.xlim[0]+self.mass_radius, self.xlim[1]-self.mass_radius, self.ylim[0]+self.mass_radius, self.ylim[1]-self.mass_radius):
+                self.limit_collision_marker.header.stamp = rospy.Time.now()
+                self.limit_collision_pub.publish(self.limit_collision_marker)
 
     def in_range(self, mass_pos, xmin, xmax, ymin, ymax):
         if mass_pos.xm > xmin and mass_pos.xm < xmax and mass_pos.ym > ymin and mass_pos.ym < ymax:
@@ -219,4 +227,28 @@ class TaskStateMachine:
             marker.id = 1
             marker.header.frame_id = self.frame_id
             rospy.loginfo("[CRANE] Made Score Marker")
+            return marker
+
+    def make_limit_collision_marker(self):
+        if self.xlim is None or self.xlim is None:
+            return None
+        else:
+            marker = Marker()
+            marker.type = Marker.LINE_STRIP
+            marker.scale.x = 0.05
+            marker.color.r = 1.0
+            marker.color.a = 1.0
+            marker.points = []
+            marker.lifetime = rospy.Duration(1.0)
+            marker.header.frame_id = self.frame_id
+            # Lower left
+            marker.points.append(Point(self.xlim[0], self.ylim[0], 0.0))
+            # Upper left
+            marker.points.append(Point(self.xlim[0], self.ylim[1], 0.0))
+            # Upper right
+            marker.points.append(Point(self.xlim[1], self.ylim[1], 0.0))
+            # Lower right
+            marker.points.append(Point(self.xlim[1], self.ylim[0], 0.0))
+            # repeat lower left
+            marker.points.append(Point(self.xlim[0], self.ylim[0], 0.0))
             return marker

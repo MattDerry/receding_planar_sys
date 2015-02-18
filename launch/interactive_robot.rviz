@@ -155,7 +155,7 @@ Visualization Manager:
       Marker Topic: /robot_1/task_duration
       Name: timer
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -168,18 +168,26 @@ Visualization Manager:
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /robot_1/mass_marker
-      Name: Marker
+      Marker Topic: /robot_1/limit_collision
+      Name: limit_collision
       Namespaces:
-        markers: true
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /robot_1/mass_marker
+      Name: mass_marker
+      Namespaces:
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /robot_1/limit_markers
-      Name: Marker
+      Name: limit_marker
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -187,7 +195,7 @@ Visualization Manager:
       Class: rviz/Path
       Color: 170; 0; 0
       Enabled: true
-      Name: Path
+      Name: filtered_path
       Topic: /robot_1/mass_filt_path
       Value: true
     - Alpha: 1
@@ -195,7 +203,7 @@ Visualization Manager:
       Class: rviz/Path
       Color: 0; 0; 127
       Enabled: true
-      Name: Path
+      Name: reference_path
       Topic: /robot_1/mass_ref_path
       Value: true
     - Class: rviz/MarkerArray
@@ -203,7 +211,7 @@ Visualization Manager:
       Marker Topic: /robot_1/marker_paths
       Name: MarkerArray
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/TF
@@ -223,17 +231,17 @@ Visualization Manager:
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /robot_1/obstacle_markers
-      Name: Marker
+      Name: obstacles
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /robot_1/current_target
-      Name: Marker
+      Name: target
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -247,9 +255,9 @@ Visualization Manager:
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /robot_1/current_pose
-      Name: Marker
+      Name: current_pose
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -317,5 +325,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1200
-  X: 637
-  Y: 89
+  X: 627
+  Y: 79

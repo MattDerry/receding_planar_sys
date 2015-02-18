@@ -1,0 +1,1 @@
+obstacles: [[0.2, 0.2, 0.75, -0.3, 1.9, 0.05, 0, 1, 1], [0.3, 0.3, 0.5, 0.3, -1.9, 0.1, 1, 1, 1], [0.4, 0.4, -0.7, -0.15, 2.8, 0.075, 1, 1, 1], [0.2, 0.2, -0.35, 0.6, 0.5, 0.125, 1, 1, 1]]  # list of obstacles [height, width, xpos, ypos, heading, velocity, clockwise(0,1), sphere(0,1), respond_to_limits(0,1)]

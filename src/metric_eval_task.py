@@ -63,15 +63,11 @@ class MetricEvalTaskStateMachine(TaskStateMachine):
         if os.path.isfile(file_name):
             pkl_file = open(file_name, 'rb')
             self.trial_num = pickle.load(pkl_file)
-            self.trial_num += 1
             if self.trial_num > 15:
                 self.trial_num = 0
             pkl_file.close()
         else:
             self.trial_num = 0
-        pkl_file = open(file_name, 'w+')
-        pickle.dump(self.trial_num, pkl_file)
-        pkl_file.close()
         self.all_targets = []
         self.available_targets = []
         self.used_targets = []
@@ -137,6 +133,11 @@ class MetricEvalTaskStateMachine(TaskStateMachine):
                             wr = csv.writer(timelogfile, quoting=csv.QUOTE_ALL)
                             wr.writerow([self.task_duration, self.task_penalties, self.task_final_time, res.trust_estimate, res.cutoff_frequency, res.alpha, error_response.rms, error_response.angle_rms, trial_trust])
                             rospy.loginfo("Wrote time log entry")
+                        pkg_dir = roslib.packages.get_pkg_dir("receding_planar_sys")
+                        file_name = pkg_dir + '/trial_num.pkl'
+                        pkl_file = open(file_name, 'w+')
+                        pickle.dump(self.trial_num+1, pkl_file)
+                        pkl_file.close()
                         rospy.loginfo("Done")
                         rospy.loginfo(os.getcwd())
                     except rospy.ServiceException, e:
@@ -169,7 +170,6 @@ class MetricEvalTaskStateMachine(TaskStateMachine):
             else:
                 rospy.logdebug("[MEVAL]Reset Current Target")
                 self.consecutive_in_targets = 0
-                self.in_obstacle = False
 
     def task_timer_cb(self, msg):
         self.task_duration = (rospy.Time.now() - self.task_start_time).to_sec()
