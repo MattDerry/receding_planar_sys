@@ -49,8 +49,8 @@ import csv
 DT = 1/100.
 MARKERWF = 'optimization_frame'
 MARKERFRAME = 'mass_ref_frame'
-X_GAIN = 0.5
-Y_GAIN = 0.5
+X_GAIN = 0.75
+Y_GAIN = 0.75
 
 # Signal Filtering Constants
 NYQUIST = (1/DT)/2
@@ -539,7 +539,14 @@ def main():
     # Calculate cutoff frequency from trust
 
     if not rospy.has_param("adapt_trust"):
-        trial_trust = 1.0
+        if rospy.has_param("user_trust"):
+            rospy.logwarn("Manually Setting Trust")
+            trial_trust = rospy.get_param("user_trust")
+        else:
+            rospy.logerror("No trust set, using Full Trust")
+            trial_trust = 1.0
+    else:
+        rospy.loginfo("Adapting trust")
 
     global CUTOFF
     CUTOFF = (MAX_CF-MIN_CF)*pow(trial_trust, 3) + MIN_CF

@@ -57,6 +57,9 @@ TIME_WEIGHT = .1
 ERROR_WEIGHT = 10000
 COLLISION_WEIGHT = 50
 
+OKBLUE = '\033[94m'
+ENDC = '\033[0m'
+
 class MazeTaskStateMachine(TaskStateMachine):
     def __init__(self, x_world_limits, y_world_limits):
         TaskStateMachine.__init__(self, x_world_limits, y_world_limits)
@@ -76,7 +79,7 @@ class MazeTaskStateMachine(TaskStateMachine):
             file_name = pkg_dir + '/launch/0_maze_task_definitions.yaml'
         else:
             rospy.loginfo("Load Task Definition YAML 1")
-            file_name = pkg_dir + '/launch/1_maze_task_definitions.yaml'
+            file_name = pkg_dir + '/launch/0_maze_task_definitions.yaml'
         paramlist=rosparam.load_file(file_name)
         for params, ns in paramlist:
             rosparam.upload_params(ns,params)
@@ -158,7 +161,8 @@ class MazeTaskStateMachine(TaskStateMachine):
                         pkl_file = open(file_name, 'w+')
                         pickle.dump(self.trial_num+1, pkl_file)
                         pkl_file.close()
-                        rospy.loginfo("Done")
+                        notice = OKBLUE+"COMPLETED TRIAL %d"%self.trial_num+ENDC
+                        rospy.loginfo(notice)
                         rospy.loginfo(os.getcwd())
                     except rospy.ServiceException, e:
                         rospy.loginfo("Task Coordinator client: Service did not process stop request: %s"%str(e))

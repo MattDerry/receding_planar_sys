@@ -3,14 +3,15 @@
   <arg name="vis" default="true" /> <!-- run rviz? -->
   <arg name="index" value="1" /> <!-- robot XBee value -->
   <arg name="freq" default="10.0" /> <!-- receding horizon freq -->
-  <arg name="window" default="20" /> <!-- number of timesteps to look ahead -->
-  <arg name="tf" default="10.0" /> <!-- final time -->
+  <arg name="window" default="10" /> <!-- number of timesteps to look ahead -->
+  <arg name="tf" default="300.0" /> <!-- final time -->
   <arg name="noise" default="0.0" /> <!-- amount of noise to add -->
   <arg name="simfreq" default="10.0" /> <!-- frequency of the simulator -->
   <arg name="cont" default="receding" /> <!-- what type of controller to use -->
-  <arg name="interactive" default="false" /> <!-- if true, we use an interactive ref generator -->
-  <arg name="joy" default="true" /> <!-- if true, use joystick emergency stopper -->
+  <arg name="interactive" default="true" /> <!-- if true, we use an interactive ref generator -->
+  <arg name="joy" default="false" /> <!-- if true, use joystick emergency stopper -->
   <arg name="user" /> <!-- user name or indicator of some kind -->
+  <arg name="trust" />
   <arg name="record" default="true" /> <!-- should we bag data? -->
 
   <!-- REFERENCE TRAJECTORY PARAMETERS -->
@@ -37,6 +38,7 @@
     <param name="time_final" value="$(arg tf)" type="double" />
     <param name="/simulator_noise" value="$(arg noise)" type="double" />
     <param name="controller_type" value="$(arg cont)" type="string"/>
+    <param name="user_trust" value="$(arg trust)" type="double"/>s
 
     <include file="$(find robot_simulator)/launch/single_robot_simulator.launch" >
       <arg name="rn" value="$(arg rn)" />

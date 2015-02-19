@@ -221,6 +221,7 @@ class RecedingController:
         self.filt_path_pub = rospy.Publisher("mass_filt_path", Path, queue_size=3)
         self.cov_pub = rospy.Publisher("post_covariance", PlanarCovariance, queue_size=3)
         self.opt_pub = rospy.Publisher("optimization_data", OptimizationData, queue_size=3)
+        self.sim_opt_pub = rospy.Publisher("sim_optimization_data", OptimizationData, queue_size=100)
         # define timer callbacks:
         self.path_timer = rospy.Timer(rospy.Duration(0.1), self.path_timercb)
 
@@ -326,6 +327,10 @@ class RecedingController:
             # store results:
             X[i+1] = Xoptwin[1]
             U[i] = Uoptwin[0]
+            od = OptimizationData(**err)
+            od.index = i
+            od.time = t
+            self.sim_opt_pub.publish(od)
 
         x_mse = 0.
         y_mse = 0.

@@ -7,7 +7,7 @@ if [ -n "$input" ]
 then
     filename=$1
 else
-	exit 1	
+	exit 1
 fi
 echo "Using '${filename}' as filename"
 
@@ -23,7 +23,7 @@ rosbag record -O ${filename} -e "(.*)meas_config" "(.*)ref_config" \
     "(.*)start_time" "(.*)optimization_data" "(.*)mass_ref_point" \
     "(.*)current_target" "(.*)collision" "(.*)limit_collision" "(.*)obstacle_markers" \
 	"(.*)user_score"  "(.*)current_pose" "(.*)limit_markers" "(.*)operating_condition" \
-	"(.*)unfiltered_mass_ref_point"
+	"(.*)unfiltered_mass_ref_point" "(.*)sim_optimization_data"
 
 # sleep 1
 # echo "Now press any button to stop recording..."

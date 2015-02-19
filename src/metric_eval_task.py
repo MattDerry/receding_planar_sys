@@ -53,6 +53,9 @@ ERROR_SCALING = 450.0
 
 MAX_TIME_SECONDS = 12.0
 
+OKBLUE = '\033[94m'
+ENDC = '\033[0m'
+
 class MetricEvalTaskStateMachine(TaskStateMachine):
     def __init__(self, x_world_limits, y_world_limits):
         TaskStateMachine.__init__(self, x_world_limits, y_world_limits)
@@ -138,7 +141,8 @@ class MetricEvalTaskStateMachine(TaskStateMachine):
                         pkl_file = open(file_name, 'w+')
                         pickle.dump(self.trial_num+1, pkl_file)
                         pkl_file.close()
-                        rospy.loginfo("Done")
+                        notice = OKBLUE+"COMPLETED TRIAL %d"%self.trial_num+ENDC
+                        rospy.loginfo(notice)
                         rospy.loginfo(os.getcwd())
                     except rospy.ServiceException, e:
                         rospy.loginfo("Task Coordinator client: Service did not process stop request: %s"%str(e))
