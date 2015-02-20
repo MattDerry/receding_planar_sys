@@ -543,7 +543,7 @@ def main():
             rospy.logwarn("Manually Setting Trust")
             trial_trust = rospy.get_param("user_trust")
         else:
-            rospy.logerror("No trust set, using Full Trust")
+            rospy.logerr("No trust set, using Full Trust")
             trial_trust = 1.0
     else:
         rospy.loginfo("Adapting trust")
