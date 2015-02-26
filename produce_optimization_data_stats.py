@@ -1,7 +1,7 @@
 """
 This script descends recursively into all directories in BASEDIR. It then
 grabs all CSV files that contain '/robot_1/optimization_data' and
-'/robot_1/sim_optimization_data' dumped from bag files. It then creates new CSV
+'/robot_1/sim_optimization_data' and 'robot_1/unfiltered_mass_ref_point' dumped from bag files. It then creates new CSV
 files in each of the directories containing a set of statistics for the CSV
 files.
 """
@@ -17,6 +17,7 @@ import re
 BASEDIR = "data/"
 EXT1 = "_opt_data.csv"
 EXT2 = "_sim_opt_data.csv"
+EXT3 = "_unfiltered_mass_ref_point.csv"
 SUMNAMEOPT = "optimization_summary.csv"
 SUMNAMESIM = "sim_optimization_summary.csv"
 HEADER = "trial,cost_mean,cost_median,cost_stdev,failed_to_convege_count\r\n"
@@ -28,7 +29,8 @@ def check_for_csv_files(f):
     files to go along with the bag file. If they are missing, generate them.
     """
     if not os.path.exists(os.path.splitext(f)[0]+EXT1) or \
-       not os.path.exists(os.path.splitext(f)[0]+EXT2):
+       not os.path.exists(os.path.splitext(f)[0]+EXT2) or \
+       not os.path.exists(os.path.splitext(f)[0]+EXT3):
         print "Missing at least one CSV file!"
         # Generate CSV file:
         os.system("./bag_to_csv.sh {0:s}".format(f))
@@ -65,8 +67,8 @@ def calculate_stats_and_append(fname, sumname):
         f.write(','.join(map(str,out)) + "\r\n")
         f.close()
     return
-    
-    
+
+
 
 # recursively iterate through BASEDIR and operate on all bag files that are not
 # backups

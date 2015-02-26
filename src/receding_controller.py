@@ -67,6 +67,7 @@ import numpy as np
 from collections import deque
 import copy
 import math
+from scipy.interpolate import interp1d
 
 # local imports
 import optimizer as op
@@ -75,6 +76,8 @@ import system_definition as sd
 import ekf
 import tools
 
+import trep
+import trep.discopt as discopt
 
 # global constants:
 DT = 1/10. # timestep
@@ -282,12 +285,33 @@ class RecedingController:
         winUref = winXref[1:, dsys.system.nQd:dsys.system.nQ]
         return winXref, winUref
 
+    def sim_reference_traj(self, dsys, tvec, xref):
+        Xref = np.zeros((len(tvec), dsys.nX))
+        f_int = interp1d(tvec, xref, copy=True, kind='linear', axis=0)
+        # Uref = np.zeros((len(tvec)-1, dsys.nU))
+        # iterate through all times in tvec, calculate the interpolated X value:
+        for i,t in enumerate(tvec):
+            try:
+                Xref[i] = self.interp_sim_ref_state(f_int, t)
+            except ValueError:
+                # must have requested a state outside of valid range
+                return None
+        Uref = Xref[1:, dsys.system.nQd:dsys.system.nQ]
+        return Xref,Uref
+
+    def interp_sim_ref_state(self, f_int, t):
+        return f_int(t)
+
     def error_calc_handler(self, req):
         # create mvi and dsys:
         rospy.loginfo("Raw Trajectory Length: %d", len(req.ref_trajectory))
         mvi = sd.trep.MidpointVI(self.system)
-        t_len = len(req.ref_trajectory)
+        t_len = len(req.ref_trajectory)/10 + 1
+        if len(req.ref_trajectory)%10 == 0:
+            rospy.loginfo("Adjust t_len - 1")
+            t_len = t_len - 1
         tvec = np.arange(0, self.dt*(t_len), self.dt)
+        rospy.loginfo("TLEN: %d, tvec: %d", t_len, len(tvec))
         twin = np.arange(0, self.dt*self.n_win, self.dt)
         dsys = op.discopt.DSystem(mvi, twin)
 
@@ -305,32 +329,44 @@ class RecedingController:
             Xref[idx] = Xtmp
             idx += 1
 
+        idx = 0
+        Xref_ds = np.zeros((len(tvec), dsys.nX))
+        for state in Xref:
+            if idx % 10 == 0:
+                rospy.loginfo("Idx: %d, mod idx: %d, len: %d", idx, idx/10, len(Xref_ds))
+                Xref_ds[idx/10] = Xref[idx]
+            idx += 1
+        # downsample and interpolate
+        Xref_int, Uref_int = self.sim_reference_traj(dsys, tvec, Xref_ds)
+
+
         rec_opt = op.RecedingOptimizer(self.system, twin, DT=self.dt)
         X = np.zeros((t_len, dsys.nX))
         rospy.loginfo("[ERROR_CALC] tvec length: %d, X length: %d", len(tvec), len(X))
         U = np.zeros((t_len-1, 2))
-        X[0] = Xref[0]
+        X[0] = Xref_int[0]
+        error_idx = 0
         # run
-        for i,t in enumerate(tvec[:-2]):
-            # set IC for this window:
-            X0win = X[i]
-            # get the reference trajectory for this window:
-            Xrefwin,Urefwin = self.ref_trajectory_windowizer(dsys, Xref, tvec, twin + t)
-            # print X0win
-            # print dsys.kf()
-            # print Xrefwin.shape
-            # print Urefwin.shape
-            # get the initial guess for this window:
-            Xwin, Uwin = op.calc_initial_guess(dsys, X0win, Xrefwin, Urefwin)
-            # solve the optimization for this window:
-            err, Xoptwin, Uoptwin = rec_opt.optimize_window(self.Qcost, self.Rcost, Xrefwin, Urefwin, Xwin, Uwin)
-            # store results:
-            X[i+1] = Xoptwin[1]
-            U[i] = Uoptwin[0]
-            od = OptimizationData(**err)
-            od.index = i
-            od.time = t
-            self.sim_opt_pub.publish(od)
+        try:
+            for i,t in enumerate(tvec[:-2]):
+                # set IC for this window:
+                X0win = X[i]
+                # get the reference trajectory for this window:
+                Xrefwin,Urefwin = self.ref_trajectory_windowizer(dsys, Xref_int, tvec, twin + t)
+                # get the initial guess for this window:
+                Xwin, Uwin = op.calc_initial_guess(dsys, X0win, Xrefwin, Urefwin)
+                # solve the optimization for this window:
+                err, Xoptwin, Uoptwin = rec_opt.optimize_window(self.Qcost, self.Rcost, Xrefwin, Urefwin, Xwin, Uwin)
+                # store results:
+                X[i+1] = Xoptwin[1]
+                U[i] = Uoptwin[0]
+                od = OptimizationData(**err)
+                od.index = i
+                od.time = t
+                error_idx = i
+                self.sim_opt_pub.publish(od)
+        except trep.ConvergenceError as e:
+            rospy.loginfo("Detected optimization problem: %s"%e.message)
 
         x_mse = 0.
         y_mse = 0.
@@ -339,9 +375,9 @@ class RecedingController:
         total_rms = 0.
         i = 0
         # calculate error:
-        for index in xrange(0,len(X)-1):
-            x_mse += pow(Xref[index][0] - X[index][0], 2)
-            y_mse += pow(Xref[index][1] - X[index][1], 2)
+        for index in xrange(0,error_idx):
+            x_mse += pow(Xref_int[index][0] - X[index][0], 2)
+            y_mse += pow(Xref_int[index][1] - X[index][1], 2)
             ang = math.asin(math.fabs(X[index][0]-X[index][2])/X[index][3])
             ang_mse += pow(ang, 2)
             i += 1
