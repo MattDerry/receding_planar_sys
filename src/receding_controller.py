@@ -44,6 +44,7 @@ PARAMS:
 
 # ROS imports:
 import rospy
+import rosbag
 import tf
 from std_msgs.msg import Time
 from puppeteer_msgs.msg import PlanarSystemConfig
@@ -346,6 +347,14 @@ class RecedingController:
         U = np.zeros((t_len-1, 2))
         X[0] = Xref_int[0]
         error_idx = 0
+
+        # open bag file
+        bag = rosbag.Bag(req.name, 'a', allow_unindexed=True)
+        topic_out = "/robot_1/fixed_sim_optimization_data"
+        for _,_,t in bag.read_messages("/robot_1/optimization_data"):
+            tbase = t
+            break
+
         # run
         try:
             for i,t in enumerate(tvec[:-2]):
@@ -367,10 +376,14 @@ class RecedingController:
                 od = OptimizationData(**err)
                 od.index = i
                 od.time = t
+                bag.write(topic_out, od, tbase+rospy.Duration(float(t)))
                 error_idx = i
                 self.sim_opt_pub.publish(od)
         except trep.ConvergenceError as e:
             rospy.loginfo("Could not optimize window: %s"%e.message)
+
+        # close bag file
+        bag.close()
 
         x_mse = 0.
         y_mse = 0.

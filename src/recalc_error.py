@@ -13,7 +13,7 @@ import numpy as np
 import re
 import math
 
-BASEDIR = "data/"
+BASEDIR = "data/user_matt/"
 EXT3 = "_unfiltered_mass_ref_point.csv"
 UPDATEDERROR = "updated_error.csv"
 HEADER = "trial,rms_error,angle_error,trust\r\n"
@@ -36,7 +36,7 @@ def calc_trust(error_scaling, rms, success=1):
     trust = success * math.exp(-1 * error_scaling * rms)
     return trust
 
-def calculate_and_append(fname, sumname, service_client):
+def calculate_and_append(bagname, fname, sumname, service_client):
     """
     Take in [fname] of a CSV file dumped from a bag file. Calculate stats about
     how the optimization proceeded, and append to sumfile
@@ -64,7 +64,7 @@ def calculate_and_append(fname, sumname, service_client):
     print "========================================"
     print "Calling Error Service"
     print "========================================"
-    error_response = service_client(points, times)
+    error_response = service_client(points, times, bagname)
     # cost mean, median, and stdev:
     out.append(error_response.rms)
     out.append(error_response.angle_rms)
@@ -117,7 +117,7 @@ def main():
                 print "parsing file:",m
                 check_for_csv_files(m)
                 errfile = os.path.splitext(m)[0]+EXT3
-                calculate_and_append(errfile, UPDATEDERROR, trajectory_error_client)
+                calculate_and_append(m, errfile, UPDATEDERROR, trajectory_error_client)
 
 
 
