@@ -27,7 +27,8 @@ def check_for_csv_files(f):
     if not os.path.exists(os.path.splitext(f)[0]+EXT3):
         print "Missing at least one CSV file!"
         # Generate CSV file:
-        os.system("./bag_to_csv.sh {0:s}".format(f))
+        pkg_dir = roslib.packages.get_pkg_dir("receding_planar_sys")
+        os.system(os.path.join(pkg_dir,"./bag_to_csv.sh {0:s}".format(f)))
     return
 
 def calc_trust(error_scaling, rms, success=1):
@@ -88,8 +89,10 @@ def main():
 
     # recursively iterate through BASEDIR and operate on all bag files that are not
     # backups
+    global BASEDIR
     pkg_dir = roslib.packages.get_pkg_dir("receding_planar_sys")
-    BASEDIR = pkg_dir + '/data'
+    TMPDIR = os.path.join(pkg_dir, BASEDIR)
+    BASEDIR = TMPDIR
 
     rospy.loginfo("Setting data directory to: %s", BASEDIR)
 

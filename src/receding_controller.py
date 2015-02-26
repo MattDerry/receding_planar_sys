@@ -310,9 +310,9 @@ class RecedingController:
         if len(req.ref_trajectory)%10 == 0:
             rospy.loginfo("Adjust t_len - 1")
             t_len = t_len - 1
-        tvec = np.arange(0, self.dt*(t_len), self.dt)
-        rospy.loginfo("TLEN: %d, tvec: %d", t_len, len(tvec))
+        tvec = np.array([self.dt*i for i in range(t_len)])
         twin = np.arange(0, self.dt*self.n_win, self.dt)
+        rospy.logdebug("TLEN: %d, tvec: %d", t_len, len(tvec))
         dsys = op.discopt.DSystem(mvi, twin)
 
         # calculate reference trajectory
@@ -333,7 +333,7 @@ class RecedingController:
         Xref_ds = np.zeros((len(tvec), dsys.nX))
         for state in Xref:
             if idx % 10 == 0:
-                rospy.loginfo("Idx: %d, mod idx: %d, len: %d", idx, idx/10, len(Xref_ds))
+                rospy.logdebug("Idx: %d, mod idx: %d, len: %d", idx, idx/10, len(Xref_ds))
                 Xref_ds[idx/10] = Xref[idx]
             idx += 1
         # downsample and interpolate
@@ -354,7 +354,11 @@ class RecedingController:
                 # get the reference trajectory for this window:
                 Xrefwin,Urefwin = self.ref_trajectory_windowizer(dsys, Xref_int, tvec, twin + t)
                 # get the initial guess for this window:
-                Xwin, Uwin = op.calc_initial_guess(dsys, X0win, Xrefwin, Urefwin)
+                try:
+                    Xwin, Uwin = op.calc_initial_guess(dsys, X0win, Xrefwin, Urefwin)
+                except trep.ConvergenceError as e:
+                    rospy.logerr("Failed to get initial guess: %s"%e.message)
+                    rospy.signal_shutdown("Initial Guess Error!")
                 # solve the optimization for this window:
                 err, Xoptwin, Uoptwin = rec_opt.optimize_window(self.Qcost, self.Rcost, Xrefwin, Urefwin, Xwin, Uwin)
                 # store results:
@@ -366,7 +370,7 @@ class RecedingController:
                 error_idx = i
                 self.sim_opt_pub.publish(od)
         except trep.ConvergenceError as e:
-            rospy.loginfo("Detected optimization problem: %s"%e.message)
+            rospy.loginfo("Could not optimize window: %s"%e.message)
 
         x_mse = 0.
         y_mse = 0.

@@ -7,6 +7,7 @@ import rospy
 from tools import matmult as MM
 
 
+
 def calc_initial_guess(dsys, X0, Xref, Uref):
     """
     Builds an initial trajectory guess using an initial condition, and a
@@ -110,6 +111,8 @@ class RecedingOptimizer( object ):
         finished = False
         optimizer.monitor = discopt.DOptimizerMonitor()
         error = False
+        ncost = None
+        dcost = None
         try:
             tstart = time.time()
             step_count = 0
