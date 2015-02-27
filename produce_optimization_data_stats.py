@@ -56,25 +56,24 @@ def calculate_stats_and_append(fname, sumname, n=None):
         f = open(outname, "w")
         f.write(HEADER)
         f.close()
-    else:
-        out = []
-        # trial number:
-        match = re.search(r'(?<=trial)\d+', fname)
-        out.append(int(match.group(0)))
-        # cost mean, median, and stdev:
-        if n is None:
-            n = len(dat['fieldcost'])
-        out.append(np.mean(dat['fieldcost'][0:n]))
-        out.append(np.median(dat['fieldcost'][0:n]))
-        out.append(np.std(dat['fieldcost'][0:n]))
-        # convergence failed count:
-        out.append(dat['fielddone'][0:n].astype(np.int16).tolist().count(0))
-        # number of steps stats
-        out.append(np.mean(dat['fieldsteps'][0:n]))
-        out.append(np.std(dat['fieldsteps'][0:n]))
-        f = open(outname, "a")
-        f.write(','.join(map(str,out)) + "\r\n")
-        f.close()
+    out = []
+    # trial number:
+    match = re.search(r'(?<=trial)\d+', fname)
+    out.append(int(match.group(0)))
+    # cost mean, median, and stdev:
+    if n is None:
+        n = len(dat['fieldcost'])
+    out.append(np.mean(dat['fieldcost'][0:n]))
+    out.append(np.median(dat['fieldcost'][0:n]))
+    out.append(np.std(dat['fieldcost'][0:n]))
+    # convergence failed count:
+    out.append(dat['fielddone'][0:n].astype(np.int16).tolist().count(0))
+    # number of steps stats
+    out.append(np.mean(dat['fieldsteps'][0:n]))
+    out.append(np.std(dat['fieldsteps'][0:n]))
+    f = open(outname, "a")
+    f.write(','.join(map(str,out)) + "\r\n")
+    f.close()
     return
 
 
