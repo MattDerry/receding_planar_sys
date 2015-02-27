@@ -13,7 +13,7 @@ import numpy as np
 import re
 import math
 
-BASEDIR = "data/user_matt/"
+BASEDIR = "data/"
 EXT3 = "_unfiltered_mass_ref_point.csv"
 UPDATEDERROR = "updated_error.csv"
 HEADER = "trial,rms_error,angle_error,trust\r\n"

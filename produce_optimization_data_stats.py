@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 This script descends recursively into all directories in BASEDIR. It then
 grabs all CSV files that contain '/robot_1/optimization_data' and
@@ -18,9 +19,11 @@ BASEDIR = "data/"
 EXT1 = "_opt_data.csv"
 EXT2 = "_sim_opt_data.csv"
 EXT3 = "_unfiltered_mass_ref_point.csv"
+EXT4 = "_fixed_sim_opt_data.csv"
 SUMNAMEOPT = "optimization_summary.csv"
 SUMNAMESIM = "sim_optimization_summary.csv"
-HEADER = "trial,cost_mean,cost_median,cost_stdev,failed_to_convege_count\r\n"
+FIXSUMNAMESIM = "fix_sim_optimization_summary.csv"
+HEADER = "trial,cost_mean,cost_median,cost_stdev,failed_to_converge_count,steps_avg,steps_stdev\r\n"
 
 
 def check_for_csv_files(f):
@@ -30,7 +33,8 @@ def check_for_csv_files(f):
     """
     if not os.path.exists(os.path.splitext(f)[0]+EXT1) or \
        not os.path.exists(os.path.splitext(f)[0]+EXT2) or \
-       not os.path.exists(os.path.splitext(f)[0]+EXT3):
+       not os.path.exists(os.path.splitext(f)[0]+EXT3) or \
+       not os.path.exists(os.path.splitext(f)[0]+EXT4):
         print "Missing at least one CSV file!"
         # Generate CSV file:
         os.system("./bag_to_csv.sh {0:s}".format(f))
@@ -39,7 +43,7 @@ def check_for_csv_files(f):
 
 
 
-def calculate_stats_and_append(fname, sumname):
+def calculate_stats_and_append(fname, sumname, n=None):
     """
     Take in [fname] of a CSV file dumped from a bag file. Calculate stats about
     how the optimization proceeded, and append to sumfile
@@ -58,11 +62,16 @@ def calculate_stats_and_append(fname, sumname):
         match = re.search(r'(?<=trial)\d+', fname)
         out.append(int(match.group(0)))
         # cost mean, median, and stdev:
-        out.append(np.mean(dat['fieldcost']))
-        out.append(np.median(dat['fieldcost']))
-        out.append(np.std(dat['fieldcost']))
+        if n is None:
+            n = len(dat['fieldcost'])
+        out.append(np.mean(dat['fieldcost'][0:n]))
+        out.append(np.median(dat['fieldcost'][0:n]))
+        out.append(np.std(dat['fieldcost'][0:n]))
         # convergence failed count:
-        out.append(dat['fielddone'].astype(np.int16).tolist().count(0))
+        out.append(dat['fielddone'][0:n].astype(np.int16).tolist().count(0))
+        # number of steps stats
+        out.append(np.mean(dat['fieldsteps'][0:n]))
+        out.append(np.std(dat['fieldsteps'][0:n]))
         f = open(outname, "a")
         f.write(','.join(map(str,out)) + "\r\n")
         f.close()
@@ -94,5 +103,9 @@ for root, dirnames, filenames in os.walk(BASEDIR):
             check_for_csv_files(m)
             optfile = os.path.splitext(m)[0]+EXT1
             simfile = os.path.splitext(m)[0]+EXT2
+            fixsimfile = os.path.splitext(m)[0]+EXT4
             calculate_stats_and_append(optfile, SUMNAMEOPT)
             calculate_stats_and_append(simfile, SUMNAMESIM)
+            # calculate the number of lines:
+            num_lines = sum(1 for lines in open(optfile))
+            calculate_stats_and_append(fixsimfile, FIXSUMNAMESIM, n=num_lines)

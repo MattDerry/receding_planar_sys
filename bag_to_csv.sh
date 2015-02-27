@@ -23,6 +23,7 @@ then
     # rostopic echo -p -b ${filename} $filtstate > ${filename%.*}_filtstate.txt
 	rostopic echo -p -b ${filename} /robot_1/optimization_data > ${filename%.*}_opt_data.csv
 	rostopic echo -p -b ${filename} /robot_1/sim_optimization_data > ${filename%.*}_sim_opt_data.csv
+	rostopic echo -p -b ${filename} /robot_1/fixed_sim_optimization_data > ${filename%.*}_fixed_sim_opt_data.csv
 	rostopic echo -p -b ${filename} /robot_1/unfiltered_mass_ref_point > ${filename%.*}_unfiltered_mass_ref_point.csv
 else
     echo "[ERROR] bag file not found: ${filename}"
