@@ -393,8 +393,8 @@ class RecedingController:
 
     def setup_direct_controller(self):
         self.current_command = Twist()
-        self.X_GAIN = 1.0
-        self.Y_GAIN = -1.0
+        self.X_GAIN = 0.75
+        self.Y_GAIN = -0.75
         return
 
     def setup_lqr_controller(self, X0=None):

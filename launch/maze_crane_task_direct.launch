@@ -7,11 +7,11 @@
   <arg name="tf" default="300.0" /> <!-- final time -->
   <arg name="noise" default="0.0" /> <!-- amount of noise to add -->
   <arg name="simfreq" default="10.0" /> <!-- frequency of the simulator -->
-  <arg name="cont" default="receding" /> <!-- what type of controller to use -->
+  <arg name="cont" default="direct" /> <!-- what type of controller to use -->
   <arg name="interactive" default="true" /> <!-- if true, we use an interactive ref generator -->
   <arg name="joy" default="false" /> <!-- if true, use joystick emergency stopper -->
-  <arg name="user" default="1.0"/> <!-- user name or indicator of some kind -->
-  <arg name="trust" default=""/>
+  <arg name="user" default="1"/> <!-- user name or indicator of some kind -->
+  <arg name="trust"  default="0.7"/>
   <arg name="record" default="false" /> <!-- should we bag data? -->
 
   <!-- REFERENCE TRAJECTORY PARAMETERS -->
@@ -65,9 +65,9 @@
     <!-- interactive marker nodes -->
     <group if="$(arg interactive)">
       <node pkg="receding_planar_sys" name="joystick_marker_ref_gen" type="joystick_marker_ref_gen.py" output="screen" respawn="true" />
-    <node pkg="joy" type="joy_node" name="joystick_node" output="screen" respawn="true">
-    <param name="dev" value="/dev/input/js0"/>
-    </node>
+      <node pkg="joy" type="joy_node" name="joystick_node" output="screen" respawn="true">
+        <param name="dev" value="/dev/input/js0"/>
+      </node>
       <node pkg="receding_planar_sys" name="marker_paths" type="marker_path.py" output="screen" respawn="true" />
     </group>
 
@@ -90,14 +90,13 @@
 
   <!-- start up emergency stop stuff -->
   <group if="$(arg joy)">
-  <node pkg="joy" type="joy_node" name="joystick_estop" output="screen" respawn="true">
-    <param name="dev" value="/dev/input/js1"/>
-    <remap from="joy" to="joy_emergency" />
-  </node>
-    <node pkg="receding_planar_sys" name="emergency_stopper_joy" type="emergency_stopper_joy.py"
-      output="screen" respawn="true">
-    <remap from="joy" to="joy_emergency" />
-  </node>
+    <node pkg="joy" type="joy_node" name="joystick_estop" output="screen" respawn="true">
+      <param name="dev" value="/dev/input/js1"/>
+      <remap from="joy" to="joy_emergency" />
+    </node>
+    <node pkg="receding_planar_sys" name="emergency_stopper_joy" type="emergency_stopper_joy.py" output="screen" respawn="true">
+      <remap from="joy" to="joy_emergency" />
+    </node>
   </group>
 
   <!-- start up the keyboard node -->
@@ -106,7 +105,7 @@
 
   <!-- start up rviz unless visualization is set to false -->
   <group if="$(arg vis)">
-    <node pkg="rviz" type="rviz" respawn="false" name="rviz" args="-d $(find receding_planar_sys)/launch/interactive_robot.rviz" />
+    <node pkg="rviz" type="rviz" respawn="false" name="rviz" args="-d $(find receding_planar_sys)/launch/interactive_robot_direct.rviz" />
   </group>
 
 </launch>

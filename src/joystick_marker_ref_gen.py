@@ -382,19 +382,19 @@ class MarkerControls:
             self.rx_state = []
             self.mx_state = []
             self.time_history = []
-        elif data.state == OperatingCondition.STOP and self.operating_condition != OperatingCondition.STOP:
-            for con in self.controllers:
-                con.calculate_error(self.mass_state, self.input_state_index)
+        #elif data.state == OperatingCondition.STOP and self.operating_condition != OperatingCondition.STOP:
+        #    for con in self.controllers:
+        #        con.calculate_error(self.mass_state, self.input_state_index)
                 # fx = fft(con.raw_pose_x)
                 # xl = np.linspace(0.0, 1.0/(2.0*DT), len(con.raw_pose_x)/2)
                 # fx_t = 2.0/len(con.raw_pose_x)*np.abs(fx[0:len(con.raw_pose_x)/2])
                 # print fx.shape
                 # print xl.shape
                 # print fx_t.shape
-                # with open('/home/mderry/rss_data/xl.csv', 'wb') as myfile:
+                # with open('/home/mderry/cps_data/xl.csv', 'wb') as myfile:
                 #     wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
                 #     wr.writerow(xl)
-                # with open('/home/mderry/rss_data/fx_t.csv', 'wb') as myfile:
+                # with open('/home/mderry/cps_data/fx_t.csv', 'wb') as myfile:
                 #     wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
                 #     wr.writerow(fx_t)
                 # fy = fft(con.raw_pose_y)
@@ -403,10 +403,10 @@ class MarkerControls:
                 # print fy.shape
                 # print yl.shape
                 # print fy_t.shape
-                # with open('/home/mderry/rss_data/yl.csv', 'wb') as myfile:
+                # with open('/home/mderry/cps_data/yl.csv', 'wb') as myfile:
                 #     wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
                 #     wr.writerow(yl)
-                # with open('/home/mderry/rss_data/fy_t.csv', 'wb') as myfile:
+                # with open('/home/mderry/cps_data/fy_t.csv', 'wb') as myfile:
                 #     wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
                 #     wr.writerow(fy_t)
                 # mpl.figure()

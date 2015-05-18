@@ -22,6 +22,7 @@ from geometry_msgs.msg import PointStamped
 from geometry_msgs.msg import Quaternion
 from geometry_msgs.msg import Twist
 from puppeteer_msgs.msg import PlanarSystemState
+from puppeteer_msgs.msg import PlanarSystemConfig
 from puppeteer_msgs.msg import OperatingCondition
 from puppeteer_msgs.srv import OperatingConditionChange
 from puppeteer_msgs.srv import OperatingConditionChangeRequest
@@ -128,42 +129,6 @@ class MazeTaskStateMachine(TaskStateMachine):
                     self.current_state = self.states.COMPLETED_TASK
                     try:
                         self.op_change_client(OperatingCondition(OperatingCondition.STOP))
-                        res = self.control_params_client()
-                        time.sleep(2.0)
-                        traj_res = self.trajectory_client()
-                        error_response = self.trajectory_error_client(traj_res.ref_trajectory, traj_res.times)
-                        rospy.loginfo("[MAZE] Error for use in trust calculation: %f", error_response.rms)
-                        trial_trust = self.calc_trust(ERROR_SCALING, error_response.rms)
-                        score = self.calc_score(error_response.rms, self.task_collisions, self.task_duration)
-                        rospy.loginfo("Score: %f, error: %f, collisions: %d, duration: %f", score, error_response.rms, self.task_collisions, self.task_duration)
-                        self.score_marker.text = "Score: %.1f" % score
-                        self.score_marker.header.stamp = rospy.Time.now()
-                        self.score_pub.publish(self.score_marker)
-                        rospy.loginfo("[MAZE] Trust for last trial: %.3f", trial_trust)
-                        pkg_dir = roslib.packages.get_pkg_dir("receding_planar_sys")
-                        file_name = pkg_dir + '/data/user_task_time_log.csv'
-                        with open(file_name, 'a') as timelogfile:
-                            wr = csv.writer(timelogfile, quoting=csv.QUOTE_ALL)
-                            wr.writerow([self.task_duration, self.task_penalties, self.task_final_time, res.trust_estimate, res.cutoff_frequency, res.alpha, error_response.rms, error_response.angle_rms, trial_trust])
-                            rospy.loginfo("Wrote time log entry")
-                        if rospy.has_param("user_trust_history"):
-                            trust_history = rospy.get_param("user_trust_history")
-                            trust_history.append(trial_trust)
-                        else:
-                            trust_history = [1.0, trial_trust]
-                        rospy.loginfo("Write history file")
-                        file_name = pkg_dir + '/data/user_trust_history.yaml'
-                        with open(file_name, 'w') as yaml_file:
-                            data = {'user_trust_history' : trust_history}
-                            yaml_file.write( yaml.dump(data, default_flow_style=False))
-                            rospy.loginfo("Wrote history file")
-                        file_name = pkg_dir + '/trial_num.pkl'
-                        pkl_file = open(file_name, 'w+')
-                        pickle.dump(self.trial_num+1, pkl_file)
-                        pkl_file.close()
-                        notice = OKBLUE+"COMPLETED TRIAL %d"%self.trial_num+ENDC
-                        rospy.loginfo(notice)
-                        rospy.loginfo(os.getcwd())
                     except rospy.ServiceException, e:
                         rospy.loginfo("Task Coordinator client: Service did not process stop request: %s"%str(e))
                     self.available_targets = self.all_targets
@@ -277,7 +242,7 @@ class CraneTaskCoordinator:
         # create subscriber for operating condition
         self.op_cond_sub = rospy.Subscriber("/operating_condition", OperatingCondition, self.op_cb)
         # create subscriber for current mass position
-        self.filt_state_sub = rospy.Subscriber("filt_state", PlanarSystemState, self.state_cb)
+        self.filt_state_sub = rospy.Subscriber("meas_config", PlanarSystemConfig, self.state_cb)
         # publish limit marker if one exists
         return
 
