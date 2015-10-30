@@ -52,7 +52,7 @@ def makeMarker( msg, color ):
     elif color == 'green':
         marker.color.g += 0.4
     else:
-        rospy.warn("Marker color not recognized!")
+        rospy.logwarn("Marker color not recognized!")
     return marker
 
 

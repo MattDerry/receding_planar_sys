@@ -1,5 +1,5 @@
 # ROS imports
-import roslib; roslib.load_manifest('receding_planar_sys')
+import roslib
 import rospy
 import tf
 from nav_msgs.msg import Odometry
